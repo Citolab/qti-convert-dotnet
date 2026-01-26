@@ -70,7 +70,16 @@ public sealed class Qti2ToQti3PackageConverter : IQtiPackageConverter
 
                         if (_options.ApplyItemTransforms && detected == QtiPackageXmlType.AssessmentItem)
                         {
-                            xml = QtiItemXmlTransforms.Apply(xml);
+                            var transform = QtiTransform.Create(xml);
+                            ApplyConfiguredItemTransforms(transform, _options.ItemTransformOptions);
+
+                            if (_options.OnItemTransformedAsync is not null)
+                            {
+                                await _options.OnItemTransformedAsync(transform, relativePath, cancellationToken).ConfigureAwait(false);
+                                cancellationToken.ThrowIfCancellationRequested();
+                            }
+
+                            xml = transform.Xml();
                         }
                     }
 
@@ -90,6 +99,32 @@ public sealed class Qti2ToQti3PackageConverter : IQtiPackageConverter
 
         await WriteZipAsync(outputZipPath, files, cancellationToken).ConfigureAwait(false);
         return outputZipPath;
+    }
+
+    private static void ApplyConfiguredItemTransforms(QtiTransform transform, QtiItemTransformOptions options)
+    {
+        if (options.ObjectToImg) transform.ObjectToImg();
+        if (options.ObjectToVideo) transform.ObjectToVideo();
+        if (options.ObjectToAudio) transform.ObjectToAudio();
+        if (options.SsmlSubToSpan) transform.SsmlSubToSpan();
+        if (options.StripMaterialInfo) transform.StripMaterialInfo();
+        if (options.MinChoicesToOne) transform.MinChoicesToOne();
+        if (options.ExternalScored) transform.ExternalScored();
+
+        if (options.QbCleanup) transform.QbCleanup();
+        if (options.DepConvert) transform.DepConvert();
+        if (options.DepConvertExtended) transform.DepConvertExtended();
+        if (options.HideInputsForChoiceInteractionWithImages) transform.HideInputsForChoiceInteractionWithImages();
+        if (options.UpgradePci) transform.UpgradePci();
+
+        if (options.StripStylesheets)
+        {
+            transform.StripStylesheets(options.StripStylesheetsRemovePattern, options.StripStylesheetsKeepPattern);
+        }
+        else if (!string.IsNullOrWhiteSpace(options.StripStylesheetsRemovePattern) || !string.IsNullOrWhiteSpace(options.StripStylesheetsKeepPattern))
+        {
+            transform.StripStylesheets(options.StripStylesheetsRemovePattern, options.StripStylesheetsKeepPattern);
+        }
     }
 
     private static async Task<string> ReadXmlAsync(Stream stream, CancellationToken cancellationToken)

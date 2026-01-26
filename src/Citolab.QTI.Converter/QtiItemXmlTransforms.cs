@@ -68,7 +68,7 @@ internal static class QtiItemXmlTransforms
 
             if (string.Equals((string?)obj.Attribute("data-dep-controls"), "true", StringComparison.OrdinalIgnoreCase))
             {
-                video.SetAttributeValue("controls", "");
+                video.SetAttributeValue("controls", "true");
             }
 
             var source = new XElement(obj.Name.Namespace + "source");
@@ -98,7 +98,7 @@ internal static class QtiItemXmlTransforms
 
             if (string.Equals((string?)obj.Attribute("data-dep-controls"), "true", StringComparison.OrdinalIgnoreCase))
             {
-                audio.SetAttributeValue("controls", "");
+                audio.SetAttributeValue("controls", "true");
             }
 
             var source = new XElement(obj.Name.Namespace + "source");
@@ -239,4 +239,3 @@ internal static class QtiItemXmlTransforms
     private static XAttribute? OptionalAttr(string name, string? value)
         => string.IsNullOrWhiteSpace(value) ? null : new XAttribute(name, value);
 }
-

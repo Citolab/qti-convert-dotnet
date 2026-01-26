@@ -27,8 +27,63 @@ var uploader = new QtiPackageUploader();
 var options = new QtiUploaderOptions
 {
     ConvertQti2ToQti3 = true,
-    Converter = new Qti2ToQti3PackageConverter()
+    Converter = new Qti2ToQti3PackageConverter(
+        new Qti2ToQti3PackageConverterOptions
+        {
+            ItemTransformOptions = new QtiItemTransformOptions
+            {
+                // These are enabled by default; set to false to disable.
+                ObjectToImg = true,
+                ObjectToVideo = true,
+                ObjectToAudio = true,
+                SsmlSubToSpan = true,
+                StripMaterialInfo = true,
+                MinChoicesToOne = true,
+                ExternalScored = true,
+
+                // Optional extras (off by default).
+                QbCleanup = false,
+                DepConvert = false,
+                UpgradePci = false,
+                StripStylesheets = false
+            },
+
+            // Optional per-item hook for consumer-specific transformations.
+            OnItemTransformedAsync = async (transform, itemPath, ct) =>
+            {
+                // Example: add a marker attribute
+                await transform.FnChAsync(doc =>
+                {
+                    doc.Root?.SetAttributeValue("data-processed-by", "my-app");
+                    return Task.CompletedTask;
+                });
+            }
+        })
 };
 ```
 
 The converter uses the `qti2xTo30.xsl` XSLT 3.0 upgrader (embedded in the NuGet) when running on `net9.0`. For `netstandard2.0`, it falls back to a best-effort built-in conversion.
+
+## Item transformations
+
+When converting an assessment item, the converter can apply a set of optional XML transformations via `QtiTransform` and `QtiItemTransformOptions`.
+
+**Default item transforms (enabled by default)**
+- `ObjectToImg`: converts `<object type="image/*" data="...">ALT</object>` to `<img src="..." alt="ALT" .../>`.
+- `ObjectToVideo`: converts `<object type="video/*" ... data="...">` to `<video><source .../></video>` and normalizes existing `<video controls>` usage.
+- `ObjectToAudio`: converts `<object type="audio/*" ... data="...">` to `<audio><source .../></audio>` and normalizes existing `<audio controls>` usage.
+- `SsmlSubToSpan`: converts SSML elements (e.g. `<ssml:sub>`, `<ssml:break>`, `<ssml:say-as>`, etc.) to `<span>` elements with `data-ssml-*` attributes.
+- `StripMaterialInfo`: removes `<qti-companion-materials-info>`.
+- `MinChoicesToOne`: ensures `<qti-choice-interaction min-choices>` is at least `1`.
+- `ExternalScored`: when there is no `<qti-response-processing>`, sets `external-scored="human"` on the `SCORE` outcome declaration.
+
+**Additional item transforms (disabled by default)**
+- `QbCleanup`: cleanup for common Question Builder (QB) HTML-ish wrappers (unwraps some `<div>` wrappers, span cleanup, etc.).
+- `DepConvert`: converts Dutch Extension Profile dialog triggers (`.dep-dialogTrigger`) into HTML `popover` buttons.
+- `DepConvertExtended`: converts DEP dialogs into a `<dep-popup>` structure (trigger + popup slot).
+- `HideInputsForChoiceInteractionWithImages`: adds `qti-input-control-hidden` when all choices contain images.
+- `UpgradePci`: upgrades TAO-exported portable custom interactions into a structure expected by QTI components (moves properties to `data-*`, normalizes modules/markup, etc.).
+- `StripStylesheets`: removes `<qti-stylesheet>` nodes; supports wildcard matching via `StripStylesheetsRemovePattern` / `StripStylesheetsKeepPattern`.
+
+**Consumer hook**
+- `Qti2ToQti3PackageConverterOptions.OnItemTransformedAsync` runs per assessment item after the built-in transforms, and receives a mutable `QtiTransform` so you can call `.FnCh(...)` / `.FnChAsync(...)` or chain additional built-ins.
