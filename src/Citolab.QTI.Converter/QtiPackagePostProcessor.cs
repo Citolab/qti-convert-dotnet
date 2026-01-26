@@ -56,7 +56,7 @@ internal static class QtiPackagePostProcessor
                     testChanged = true;
                 }
 
-                var resource = FindResourceByHref(manifestRoot, href);
+                var resource = FindResourceByHref(manifestRoot, href!);
                 if (resource is not null)
                 {
                     var resourceId = (string?)resource.Attribute("identifier");

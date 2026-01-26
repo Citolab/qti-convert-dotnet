@@ -20,12 +20,17 @@
     <ProjectReference Include="..\Citolab.QTI.Uploader\Citolab.QTI.Uploader.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="SaxonHE10Net31Api" Version="10.9.20-pre1" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <EmbeddedResource Include="Assets\qti2xTo30.xsl" />
+    <EmbeddedResource Include="Assets\qti2xTo30.sef.json" />
   </ItemGroup>
 
 </Project>
-

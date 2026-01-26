@@ -29,3 +29,5 @@ var options = new QtiUploaderOptions
     Converter = new Qti2ToQti3PackageConverter()
 };
 ```
+
+The converter uses the `qti2xTo30.xsl` XSLT 3.0 upgrader (embedded in the NuGet) when running on `net9.0`. For `netstandard2.0`, it falls back to a best-effort built-in conversion.

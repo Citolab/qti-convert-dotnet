@@ -28,6 +28,19 @@ internal static class Qti2ToQti3XmlConverter
             return qti2Xml;
         }
 
+#if NET9_0_OR_GREATER
+        try
+        {
+            if (SaxonXslt30Transformer.IsAvailable)
+            {
+                return SaxonXslt30Transformer.Transform(qti2Xml);
+            }
+        }
+        catch
+        {
+        }
+#endif
+
         var convertedRoot = ConvertElement(doc.Root);
 
         convertedRoot.SetAttributeValue(XNamespace.Xmlns + "xsi", Xsi.NamespaceName);
