@@ -11,6 +11,15 @@ Small .NET library that:
 - `Citolab.QTI.Uploader`: core uploader abstractions + zip extraction
 - `Citolab.QTI.Converter`: optional (pure .NET) converter implementation that converts QTI 2.x packages to QTI 3
 
+## NuGet publishing (GitHub Actions)
+
+This repo includes a GitHub Actions workflow at `.github/workflows/nuget.yml` that builds/tests/packs on PRs and on pushes to `main`, and publishes to NuGet.org on:
+
+- a tag push like `v0.1.0` (uses the tag as the NuGet version), or
+- a manual run (Actions → workflow → Run workflow) with an optional `version` input.
+
+To enable publishing, add `NUGET_API_KEY` as a repository secret.
+
 ## Basic usage (ASP.NET Controller)
 
 Create an `IQtiPackageStore` that uploads to your storage, then call `QtiPackageUploader.UploadAsync(...)`.
