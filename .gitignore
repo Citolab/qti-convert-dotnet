@@ -1,0 +1,12 @@
+## Build outputs
+**/bin/
+**/obj/
+
+## User/IDE files
+.DS_Store
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vscode/
+.idea/

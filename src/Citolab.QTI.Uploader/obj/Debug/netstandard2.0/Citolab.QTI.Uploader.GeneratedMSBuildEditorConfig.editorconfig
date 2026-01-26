@@ -1,8 +1,0 @@
-is_global = true
-build_property.RootNamespace = Citolab.QTI.Uploader
-build_property.ProjectDir = /Users/marcelhoekstra/repos/qti-uploader/src/Citolab.QTI.Uploader/
-build_property.EnableComHosting = 
-build_property.EnableGeneratedComInterfaceComImportInterop = 
-build_property.CsWinRTUseWindowsUIXamlProjections = false
-build_property.EffectiveAnalysisLevelStyle = 
-build_property.EnableCodeStyleSeverity = 

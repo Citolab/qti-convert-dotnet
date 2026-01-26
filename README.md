@@ -8,10 +8,24 @@ Small .NET library that:
 ## Packages / projects
 
 - `Citolab.QTI.Uploader`: core uploader abstractions + zip extraction
-- `Citolab.QTI.Uploader.NpxConverter`: optional converter implementation that shells out to:
-  `npx -p=@citolab/qti-convert qti-convert-pkg yourpackage.zip`
+- `Citolab.QTI.Converter`: optional (pure .NET) converter implementation that converts QTI 2.x packages to QTI 3
 
 ## Basic usage (ASP.NET Controller)
 
 Create an `IQtiPackageStore` that uploads to your storage, then call `QtiPackageUploader.UploadAsync(...)`.
 
+## QTI 2.x → QTI 3 conversion
+
+If you want automatic conversion for QTI 2.x packages, configure `QtiUploaderOptions`:
+
+```csharp
+using Citolab.QTI.Converter;
+using Citolab.QTI.Uploader;
+
+var uploader = new QtiPackageUploader();
+var options = new QtiUploaderOptions
+{
+    ConvertQti2ToQti3 = true,
+    Converter = new Qti2ToQti3PackageConverter()
+};
+```
