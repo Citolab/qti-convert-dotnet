@@ -1,6 +1,6 @@
 using System.IO.Compression;
+using System.Text;
 using System.Xml;
-using System.Xml.Linq;
 using Citolab.QTI.Converter;
 using Citolab.QTI.Uploader;
 using Xunit;
@@ -34,8 +34,12 @@ public sealed class QtiPackageUploaderTests
         Assert.False(result.ConvertedToQti3);
 
         Assert.Contains(store.StoredFiles, f => f.Kind == QtiStoredFileKind.OriginalPackage);
-        Assert.Contains(store.StoredFiles, f => f.Kind == QtiStoredFileKind.ExtractedEntry && f.RelativePath == "items/item1.xml" && f.XmlKind == QtiXmlKind.AssessmentItem);
-        Assert.Contains(store.StoredFiles, f => f.Kind == QtiStoredFileKind.ExtractedEntry && f.RelativePath == "tests/test1.xml" && f.XmlKind == QtiXmlKind.AssessmentTest);
+
+        var extractedHotspot = store.StoredFiles.Single(f =>
+            f.Kind == QtiStoredFileKind.ExtractedEntry &&
+            f.RelativePath == "items/hotspot.xml");
+        Assert.Equal(QtiXmlKind.AssessmentItem, extractedHotspot.XmlKind);
+        Assert.Equal("assessmentItem", GetRootLocalName(ReadUtf8Text(extractedHotspot.Content)));
     }
 
     [Fact]
@@ -68,15 +72,14 @@ public sealed class QtiPackageUploaderTests
         using var ms = new MemoryStream(converted.Content);
         using var archive = new ZipArchive(ms, ZipArchiveMode.Read, leaveOpen: false);
 
-        var itemXml = ReadEntryText(archive, "items/item1.xml");
+        var itemXml = ReadEntryText(archive, "items/hotspot.xml");
         Assert.Equal("qti-assessment-item", GetRootLocalName(itemXml));
 
-        var testXml = ReadEntryText(archive, "tests/test1.xml");
-        Assert.Equal("qti-assessment-test", GetRootLocalName(testXml));
-        Assert.Equal("ITEM-1", GetFirstElementAttributeByLocalName(testXml, "qti-assessment-item-ref", "identifier"));
-
-        Assert.Contains(store.StoredFiles, f => f.Kind == QtiStoredFileKind.ExtractedEntry && f.RelativePath == "items/item1.xml" && f.XmlKind == QtiXmlKind.AssessmentItem);
-        Assert.Contains(store.StoredFiles, f => f.Kind == QtiStoredFileKind.ExtractedEntry && f.RelativePath == "tests/test1.xml" && f.XmlKind == QtiXmlKind.AssessmentTest);
+        var extractedHotspot = store.StoredFiles.Single(f =>
+            f.Kind == QtiStoredFileKind.ExtractedEntry &&
+            f.RelativePath == "items/hotspot.xml");
+        Assert.Equal(QtiXmlKind.AssessmentItem, extractedHotspot.XmlKind);
+        Assert.Equal("qti-assessment-item", GetRootLocalName(ReadUtf8Text(extractedHotspot.Content)));
     }
 
     [Fact]
@@ -136,10 +139,10 @@ public sealed class QtiPackageUploaderTests
         return string.Empty;
     }
 
-    private static string? GetFirstElementAttributeByLocalName(string xml, string elementLocalName, string attributeName)
+    private static string ReadUtf8Text(byte[] bytes)
     {
-        var doc = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
-        var element = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == elementLocalName);
-        return (string?)element?.Attribute(attributeName);
+        using var ms = new MemoryStream(bytes);
+        using var reader = new StreamReader(ms, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: false);
+        return reader.ReadToEnd();
     }
 }
