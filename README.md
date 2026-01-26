@@ -1,6 +1,7 @@
-# Citolab.QTI.Uploader
+# Citolab.QTI.Converter and Citolab.QTI.Uploader
 
 Small .NET library that:
+
 - validates and extracts QTI package zip files
 - optionally converts QTI 2.x packages to QTI 3 (via pluggable converter)
 - streams the original zip and extracted entries to a consumer-provided callback (e.g. Blob Storage)

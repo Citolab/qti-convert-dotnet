@@ -9,7 +9,7 @@
     <Authors>Citolab</Authors>
     <Company>Cito</Company>
     <PackageDescription>.NET QTI 2.x to QTI 3 package converter for Citolab.QTI.Uploader.</PackageDescription>
-    <RepositoryUrl>https://github.com/Citolab/qti-uploader</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Citolab/qti-convert-dotnet</RepositoryUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Nullable>enable</Nullable>
