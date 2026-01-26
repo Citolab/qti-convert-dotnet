@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Citolab.QTI.Uploader</RootNamespace>
+    <PackageId>Citolab.QTI.Uploader.NpxConverter</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Citolab</Authors>
+    <Company>Cito</Company>
+    <PackageDescription>Npx-based QTI 2.x to QTI 3 package converter for Citolab.QTI.Uploader.</PackageDescription>
+    <RepositoryUrl>https://github.com/Citolab/qti-uploader</RepositoryUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Citolab.QTI.Uploader\Citolab.QTI.Uploader.csproj" />
+  </ItemGroup>
+
+</Project>

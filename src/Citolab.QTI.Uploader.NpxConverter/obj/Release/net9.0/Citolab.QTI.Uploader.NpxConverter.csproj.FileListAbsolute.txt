@@ -1,0 +1,16 @@
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/bin/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.deps.json
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/bin/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.dll
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/bin/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.pdb
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/bin/Release/net9.0/Citolab.QTI.Uploader.dll
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/bin/Release/net9.0/Citolab.QTI.Uploader.pdb
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.csproj.AssemblyReference.cache
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.GeneratedMSBuildEditorConfig.editorconfig
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.AssemblyInfoInputs.cache
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.AssemblyInfo.cs
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.csproj.CoreCompileInputs.cache
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.sourcelink.json
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab..5FF7EE0C.Up2Date
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.dll
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/refint/Citolab.QTI.Uploader.NpxConverter.dll
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/Citolab.QTI.Uploader.NpxConverter.pdb
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader.NpxConverter/obj/Release/net9.0/ref/Citolab.QTI.Uploader.NpxConverter.dll

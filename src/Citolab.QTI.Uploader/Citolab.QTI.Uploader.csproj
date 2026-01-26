@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net9.0;netstandard2.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Citolab.QTI.Uploader</RootNamespace>
+    <PackageId>Citolab.QTI.Uploader</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Citolab</Authors>
+    <Company>Cito</Company>
+    <PackageDescription>Upload/extract QTI package zips with a consumer-provided storage callback.</PackageDescription>
+    <RepositoryUrl>https://github.com/Citolab/qti-uploader</RepositoryUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

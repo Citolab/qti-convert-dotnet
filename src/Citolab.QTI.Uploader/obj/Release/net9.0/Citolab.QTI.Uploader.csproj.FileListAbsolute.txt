@@ -1,0 +1,12 @@
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/Citolab.QTI.Uploader.GeneratedMSBuildEditorConfig.editorconfig
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/Citolab.QTI.Uploader.AssemblyInfoInputs.cache
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/Citolab.QTI.Uploader.AssemblyInfo.cs
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/Citolab.QTI.Uploader.csproj.CoreCompileInputs.cache
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/Citolab.QTI.Uploader.sourcelink.json
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/bin/Release/net9.0/Citolab.QTI.Uploader.deps.json
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/bin/Release/net9.0/Citolab.QTI.Uploader.dll
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/bin/Release/net9.0/Citolab.QTI.Uploader.pdb
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/Citolab.QTI.Uploader.dll
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/refint/Citolab.QTI.Uploader.dll
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/Citolab.QTI.Uploader.pdb
+/Users/marcelhoekstra/repos/QtiAzureBackend/qti-uploader/src/Citolab.QTI.Uploader/obj/Release/net9.0/ref/Citolab.QTI.Uploader.dll
