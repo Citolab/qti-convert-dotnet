@@ -4,9 +4,13 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9E18AC37-A801-4F48-98BB-DF0B97FF2C87}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Citolab.QTI.Converter", "src\Citolab.QTI.Converter\Citolab.QTI.Converter.csproj", "{B3E4F6C7-90F0-4A1F-9A1A-3A9C2E8F2E15}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Citolab.QTI.Uploader", "src\Citolab.QTI.Uploader\Citolab.QTI.Uploader.csproj", "{CCD44EAE-219D-8D16-1511-DCB10FA72A78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Citolab.QTI.Uploader.Tests", "tests\Citolab.QTI.Uploader.Tests\Citolab.QTI.Uploader.Tests.csproj", "{4C1B1DB7-8D2B-4B5B-9D57-0B5BA0534B76}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,6 +26,10 @@ Global
 		{CCD44EAE-219D-8D16-1511-DCB10FA72A78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCD44EAE-219D-8D16-1511-DCB10FA72A78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCD44EAE-219D-8D16-1511-DCB10FA72A78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C1B1DB7-8D2B-4B5B-9D57-0B5BA0534B76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C1B1DB7-8D2B-4B5B-9D57-0B5BA0534B76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C1B1DB7-8D2B-4B5B-9D57-0B5BA0534B76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C1B1DB7-8D2B-4B5B-9D57-0B5BA0534B76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -29,6 +37,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{B3E4F6C7-90F0-4A1F-9A1A-3A9C2E8F2E15} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{CCD44EAE-219D-8D16-1511-DCB10FA72A78} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{4C1B1DB7-8D2B-4B5B-9D57-0B5BA0534B76} = {9E18AC37-A801-4F48-98BB-DF0B97FF2C87}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2AE275CA-646C-45C0-A798-19D4E55DD76A}

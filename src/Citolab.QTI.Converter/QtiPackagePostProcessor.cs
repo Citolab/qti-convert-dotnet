@@ -102,5 +102,35 @@ internal static class QtiPackagePostProcessor
         return $"{left.TrimEnd('/')}/{right.TrimStart('/')}";
     }
 
-    private static string NormalizePath(string path) => path.Replace('\\', '/');
+    private static string NormalizePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return string.Empty;
+
+        var normalized = path.Replace('\\', '/');
+
+        var parts = normalized.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        var stack = new List<string>(parts.Length);
+
+        foreach (var part in parts)
+        {
+            if (part == ".") continue;
+
+            if (part == "..")
+            {
+                if (stack.Count > 0 && stack[stack.Count - 1] != "..")
+                {
+                    stack.RemoveAt(stack.Count - 1);
+                }
+                else
+                {
+                    stack.Add("..");
+                }
+                continue;
+            }
+
+            stack.Add(part);
+        }
+
+        return string.Join("/", stack);
+    }
 }
