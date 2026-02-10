@@ -589,5 +589,236 @@ public sealed class QtiTransformTests
         var result = QtiTransform.Create(input).StripStylesheets(removePattern: null, keepPattern: null).Xml();
         XmlAssert.Equal(result, expected);
     }
+
+    [Fact]
+    public async Task StylesheetsInlineAsync_InlinesCssContent()
+    {
+        const string input = """
+                             <?xml version="1.0" encoding="UTF-8"?>
+                             <qti-assessment-item>
+                               <qti-stylesheet href="https://example.com/styles.css"></qti-stylesheet>
+                               <qti-item-body>
+                                 <p>Test content</p>
+                               </qti-item-body>
+                             </qti-assessment-item>
+                             """;
+
+        const string expected = """
+                                <?xml version="1.0" encoding="UTF-8"?>
+                                <qti-assessment-item>
+                                  <qti-stylesheet href="https://example.com/styles.css">body { font-family: Arial, sans-serif; }</qti-stylesheet>
+                                  <qti-item-body>
+                                    <p>Test content</p>
+                                  </qti-item-body>
+                                </qti-assessment-item>
+                                """;
+
+        // Mock function to return CSS content for URLs
+        static Task<string?> GetMockCssContent(string href)
+        {
+            return href switch
+            {
+                "https://example.com/styles.css" => Task.FromResult<string?>("body { font-family: Arial, sans-serif; }"),
+                _ => Task.FromResult<string?>(null)
+            };
+        }
+
+        var result = await QtiTransform
+            .Create(input)
+            .StylesheetsInlineAsync(GetMockCssContent);
+
+        XmlAssert.Equal(result.Xml(), expected);
+    }
+
+    [Fact]
+    public async Task StylesheetsInlineAsync_HandlesRelativePathsWithFileResolver()
+    {
+        const string input = """
+                             <?xml version="1.0" encoding="UTF-8"?>
+                             <qti-assessment-item>
+                               <qti-stylesheet href="styles/main.css"></qti-stylesheet>
+                               <qti-item-body>
+                                 <p>Test content</p>
+                               </qti-item-body>
+                             </qti-assessment-item>
+                             """;
+
+        const string expected = """
+                                <?xml version="1.0" encoding="UTF-8"?>
+                                <qti-assessment-item>
+                                  <qti-stylesheet href="styles/main.css">/* relative styles */</qti-stylesheet>
+                                  <qti-item-body>
+                                    <p>Test content</p>
+                                  </qti-item-body>
+                                </qti-assessment-item>
+                                """;
+
+        // Mock file content resolver
+        static Task<string?> GetFileContent(string resolvedPath, string itemPath)
+        {
+            // Simulate file content based on resolved path
+            return resolvedPath switch
+            {
+                "items/math/styles/main.css" => Task.FromResult<string?>("/* relative styles */"),
+                _ => Task.FromResult<string?>(null)
+            };
+        }
+
+        var result = await QtiTransform
+            .Create(input)
+            .StylesheetsInlineAsync(GetFileContent, "items/math/question.xml");
+
+        XmlAssert.Equal(result.Xml(), expected);
+    }
+
+    [Fact]
+    public async Task StylesheetsInlineAsync_IgnoresElementsWithoutHref()
+    {
+        const string input = """
+                             <?xml version="1.0" encoding="UTF-8"?>
+                             <qti-assessment-item>
+                               <qti-stylesheet>/* existing inline styles */</qti-stylesheet>
+                               <qti-stylesheet href="https://example.com/styles.css"></qti-stylesheet>
+                               <qti-item-body>
+                                 <p>Test content</p>
+                               </qti-item-body>
+                             </qti-assessment-item>
+                             """;
+
+        const string expected = """
+                                <?xml version="1.0" encoding="UTF-8"?>
+                                <qti-assessment-item>
+                                  <qti-stylesheet>/* existing inline styles */</qti-stylesheet>
+                                  <qti-stylesheet href="https://example.com/styles.css">body { color: red; }</qti-stylesheet>
+                                  <qti-item-body>
+                                    <p>Test content</p>
+                                  </qti-item-body>
+                                </qti-assessment-item>
+                                """;
+
+        // Mock function to return CSS content for URLs
+        static Task<string?> GetMockCssContent(string href)
+        {
+            return href switch
+            {
+                "https://example.com/styles.css" => Task.FromResult<string?>("body { color: red; }"),
+                _ => Task.FromResult<string?>(null)
+            };
+        }
+
+        var result = await QtiTransform
+            .Create(input)
+            .StylesheetsInlineAsync(GetMockCssContent);
+
+        XmlAssert.Equal(result.Xml(), expected);
+    }
+
+    [Fact]
+    public async Task StylesheetsInlineAsync_WorksWithZipPackageFileResolver()
+    {
+        const string input = """
+                             <?xml version="1.0" encoding="UTF-8"?>
+                             <qti-assessment-item>
+                               <qti-stylesheet href="../shared/common.css"></qti-stylesheet>
+                               <qti-stylesheet href="item-specific.css"></qti-stylesheet>
+                               <qti-item-body>
+                                 <p>Test content with stylesheets</p>
+                               </qti-item-body>
+                             </qti-assessment-item>
+                             """;
+
+        const string expected = """
+                                <?xml version="1.0" encoding="UTF-8"?>
+                                <qti-assessment-item>
+                                  <qti-stylesheet href="../shared/common.css">/* common styles */</qti-stylesheet>
+                                  <qti-stylesheet href="item-specific.css">/* item styles */</qti-stylesheet>
+                                  <qti-item-body>
+                                    <p>Test content with stylesheets</p>
+                                  </qti-item-body>
+                                </qti-assessment-item>
+                                """;
+
+        // Mock ZIP package file resolver - simulates files from a ZIP package
+        static Task<string?> GetFileFromZip(string resolvedPath, string itemPath) =>
+            resolvedPath switch
+            {
+                "items/math/../shared/common.css" => Task.FromResult<string?>("/* common styles */"),
+                "items/math/item-specific.css" => Task.FromResult<string?>("/* item styles */"),
+                _ => Task.FromResult<string?>(null)
+            };
+
+        var result = await QtiTransform
+            .Create(input)
+            .StylesheetsInlineAsync(GetFileFromZip, "items/math/question.xml");
+
+        XmlAssert.Equal(result.Xml(), expected);
+    }
+
+    [Fact]
+    public async Task StylesheetsInlineAsync_WorksWithRealOrkneyTestData()
+    {
+        // Embed the actual orkney1.xml content (simplified for the stylesheet part)
+        const string orkneyXml = """
+                                  <?xml version="1.0" encoding="UTF-8"?>
+                                  <qti-assessment-item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0" xsi:schemaLocation="http://www.imsglobal.org/xsd/imsqtiasi_v3p0 https://purl.imsglobal.org/spec/qti/v3p0/schema/xsd/imsqti_asiv3p0_v1p0.xsd" identifier="orkney1" title="Orkney 1" adaptive="false" time-dependent="false">
+                                    <qti-response-declaration identifier="RESPONSE" cardinality="single" base-type="identifier">
+                                      <qti-correct-response>
+                                        <qti-value>T</qti-value>
+                                      </qti-correct-response>
+                                    </qti-response-declaration>
+                                    <qti-outcome-declaration identifier="SCORE" cardinality="single" base-type="float">
+                                      <qti-default-value>
+                                        <qti-value>0</qti-value>
+                                      </qti-default-value>
+                                    </qti-outcome-declaration>
+                                    <qti-stylesheet href="shared/orkney.css" type="text/css"/>
+                                    <qti-item-body>
+                                      <div class="rightpane">
+                                        <object data="shared/orkney.html" type="text/html"/>
+                                      </div>
+                                      <div class="leftpane">
+                                        <p>Read the text about the Orkney Islands and then decide if the following sentence is correct or incorrect.</p>
+                                        <qti-choice-interaction response-identifier="RESPONSE" shuffle="false" max-choices="1" min-choices="1">
+                                          <qti-prompt>Some of the islands are home to animals rather than people.</qti-prompt>
+                                          <qti-simple-choice identifier="T">Correct</qti-simple-choice>
+                                          <qti-simple-choice identifier="F">Incorrect</qti-simple-choice>
+                                        </qti-choice-interaction>
+                                      </div>
+                                    </qti-item-body>
+                                    <qti-response-processing template="https://purl.imsglobal.org/spec/qti/v3p0/rptemplates/match_correct.xml"/>
+                                  </qti-assessment-item>
+                                  """;
+
+        // Embed the actual orkney.css content 
+        const string orkneyCss = "object { width: 100%; height: 100% }\n.leftpane { position: fixed; top: 32px; left: 32px; width: 264px; }\n.rightpane { position: fixed; top: 32px; left: 328px; width: 464px; }";
+        
+        // File resolver that mimics the QTI package structure (for ZIP package processing)
+        static Task<string?> GetFileFromPackage(string resolvedPath, string itemPath) =>
+            resolvedPath switch
+            {
+                "items/shared/orkney.css" => Task.FromResult<string?>(orkneyCss),
+                _ => Task.FromResult<string?>(null)
+            };
+
+        // Apply the transformation  
+        var result = await QtiTransform
+            .Create(orkneyXml)
+            .StylesheetsInlineAsync(GetFileFromPackage, "items/orkney1.xml");
+
+        var resultXml = result.Xml();
+        
+        // Verify the CSS content was inlined
+        Assert.Contains("object { width: 100%; height: 100% }", resultXml);
+        Assert.Contains(".leftpane { position: fixed; top: 32px; left: 32px; width: 264px; }", resultXml);
+        Assert.Contains(".rightpane { position: fixed; top: 32px; left: 328px; width: 464px; }", resultXml);
+        
+        // Verify the href attribute is still present
+        Assert.Contains("href=\"shared/orkney.css\"", resultXml);
+        
+        // Verify it's still a valid QTI document structure
+        Assert.Contains("<qti-assessment-item", resultXml);
+        Assert.Contains("identifier=\"orkney1\"", resultXml);
+        Assert.Contains("<qti-choice-interaction", resultXml);
+    }
 }
 

@@ -75,7 +75,24 @@ public sealed class Qti2ToQti3PackageConverter : IQtiPackageConverter
 
                             if (_options.OnItemTransformedAsync is not null)
                             {
-                                await _options.OnItemTransformedAsync(transform, relativePath, cancellationToken).ConfigureAwait(false);
+                                // Create file resolver for accessing other files in the ZIP package
+                                Func<string, Task<string?>> fileResolver = (string filePath) =>
+                                {
+                                    if (files.TryGetValue(filePath, out var file))
+                                    {
+                                        if (file.TextContent is not null)
+                                        {
+                                            return Task.FromResult<string?>(file.TextContent);
+                                        }
+                                        if (file.BinaryContent is not null)
+                                        {
+                                            return Task.FromResult<string?>(System.Text.Encoding.UTF8.GetString(file.BinaryContent));
+                                        }
+                                    }
+                                    return Task.FromResult<string?>(null);
+                                };
+
+                                await _options.OnItemTransformedAsync(transform, relativePath, fileResolver, cancellationToken).ConfigureAwait(false);
                                 cancellationToken.ThrowIfCancellationRequested();
                             }
 

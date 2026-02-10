@@ -93,6 +93,47 @@ When converting an assessment item, the converter can apply a set of optional XM
 - `HideInputsForChoiceInteractionWithImages`: adds `qti-input-control-hidden` when all choices contain images.
 - `UpgradePci`: upgrades TAO-exported portable custom interactions into a structure expected by QTI components (moves properties to `data-*`, normalizes modules/markup, etc.).
 - `StripStylesheets`: removes `<qti-stylesheet>` nodes; supports wildcard matching via `StripStylesheetsRemovePattern` / `StripStylesheetsKeepPattern`.
+- `StylesheetsInlineAsync`: fetches CSS content from external stylesheet URLs and inlines them into `<qti-stylesheet>` elements. Supports both HTTP URLs and relative file paths within QTI packages. Use `OnItemTransformedAsync` hook for custom async transformations like this.
+
+**Usage example for StylesheetsInlineAsync with ZIP uploads:**
+```csharp
+OnItemTransformedAsync = async (transform, itemPath, fileResolver, ct) =>
+{
+    // Inline external stylesheets from ZIP package files
+    await transform.StylesheetsInlineAsync(async (resolvedPath, currentItemPath) =>
+    {
+        // resolvedPath is the stylesheet path resolved relative to the item
+        // Use the provided fileResolver to get CSS content from ZIP package
+        return await fileResolver(resolvedPath);
+    }, itemPath);
+    
+    // Alternative: if stylesheets are HTTP URLs, use custom HTTP client
+    await transform.StylesheetsInlineAsync(async href => {
+        if (href.StartsWith("http"))
+        {
+            using var client = new HttpClient();
+            var response = await client.GetAsync(href, ct);
+            return response.IsSuccessStatusCode 
+                ? await response.Content.ReadAsStringAsync() 
+                : null;
+        }
+        // For relative paths, use the ZIP file resolver
+        var resolvedPath = Path.Combine(Path.GetDirectoryName(itemPath) ?? "", href.Replace('/', Path.DirectorySeparatorChar));
+        return await fileResolver(resolvedPath.Replace('\\', '/'));
+    });
+}
+```
+
+**Example QTI Package Structure:**
+```
+item1/
+  ├── question.xml          (contains <qti-stylesheet href="../shared/styles.css">)
+  └── item-specific.css
+shared/
+  └── styles.css            (CSS file to be inlined)
+```
+
+When processing `item1/question.xml`, the stylesheet `../shared/styles.css` resolves to `shared/styles.css` in the ZIP package.
 
 **Consumer hook**
 - `Qti2ToQti3PackageConverterOptions.OnItemTransformedAsync` runs per assessment item after the built-in transforms, and receives a mutable `QtiTransform` so you can call `.FnCh(...)` / `.FnChAsync(...)` or chain additional built-ins.

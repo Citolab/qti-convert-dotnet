@@ -274,5 +274,155 @@ public sealed partial class QtiTransform
         singleForwardSlashes = singleForwardSlashes.Replace("http:/", "http://").Replace("https:/", "https://");
         return singleForwardSlashes;
     }
+
+    private static readonly HttpClient DefaultHttpClient = new HttpClient();
+
+    private static async Task StylesheetsInlineAsync(XDocument doc, Func<string, Task<string?>>? getStylesheetContentAsync = null, string? basePath = null)
+    {
+        getStylesheetContentAsync ??= FetchStylesheetContentAsync;
+
+        var stylesheetElements = doc.Descendants()
+            .Where(e => e.Name.LocalName == "qti-stylesheet")
+            .ToList();
+
+        foreach (var stylesheet in stylesheetElements)
+        {
+            var href = (string?)stylesheet.Attribute("href");
+            if (string.IsNullOrWhiteSpace(href))
+            {
+                continue;
+            }
+
+            try
+            {
+                var cssContent = await GetStylesheetContent(href!, getStylesheetContentAsync, basePath).ConfigureAwait(false);
+                if (!string.IsNullOrEmpty(cssContent))
+                {
+                    stylesheet.RemoveNodes();
+                    stylesheet.Add(new XText(cssContent));
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log warning but don't fail the entire transformation
+                Console.WriteLine($"Warning: Failed to inline stylesheet \"{href}\": {ex.Message}");
+            }
+        }
+    }
+
+    private static async Task StylesheetsInlineAsync(XDocument doc, Func<string, string, Task<string?>>? getFileContentAsync = null, string? itemPath = null)
+    {
+        var stylesheetElements = doc.Descendants()
+            .Where(e => e.Name.LocalName == "qti-stylesheet")
+            .ToList();
+
+        foreach (var stylesheet in stylesheetElements)
+        {
+            var href = (string?)stylesheet.Attribute("href");
+            if (string.IsNullOrWhiteSpace(href))
+            {
+                continue;
+            }
+
+            try
+            {
+                string? cssContent = null;
+
+                if (IsUrl(href!))
+                {
+                    // Handle HTTP/HTTPS URLs
+                    cssContent = await FetchStylesheetContentAsync(href!).ConfigureAwait(false);
+                }
+                else if (getFileContentAsync != null && !string.IsNullOrEmpty(itemPath))
+                {
+                    // Handle relative paths using the file content resolver
+                    var resolvedPath = ResolveRelativePath(href!, itemPath!);
+                    cssContent = await getFileContentAsync(resolvedPath, itemPath!).ConfigureAwait(false);
+                }
+                else if (!string.IsNullOrEmpty(itemPath))
+                {
+                    // Fallback: try to read as file relative to item path
+                    var resolvedPath = ResolveRelativePath(href!, itemPath!);
+                    cssContent = await ReadFileContentAsync(resolvedPath).ConfigureAwait(false);
+                }
+
+                if (!string.IsNullOrEmpty(cssContent))
+                {
+                    stylesheet.RemoveNodes();
+                    stylesheet.Add(new XText(cssContent));
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log warning but don't fail the entire transformation
+                Console.WriteLine($"Warning: Failed to inline stylesheet \"{href}\": {ex.Message}");
+            }
+        }
+    }
+
+    private static async Task<string?> GetStylesheetContent(string href, Func<string, Task<string?>> getStylesheetContentAsync, string? basePath)
+    {
+        if (IsUrl(href))
+        {
+            return await getStylesheetContentAsync(href).ConfigureAwait(false);
+        }
+
+        // Handle relative path
+        if (!string.IsNullOrEmpty(basePath))
+        {
+            var resolvedPath = Path.Combine(basePath, href.Replace('/', Path.DirectorySeparatorChar));
+            return await ReadFileContentAsync(resolvedPath).ConfigureAwait(false);
+        }
+
+        // Fallback to treating as URL
+        return await getStylesheetContentAsync(href).ConfigureAwait(false);
+    }
+
+    private static bool IsUrl(string href)
+    {
+        return href.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+               href.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveRelativePath(string href, string itemPath)
+    {
+        // Get the directory of the item file
+        var itemDirectory = Path.GetDirectoryName(itemPath) ?? string.Empty;
+        
+        // Combine with the stylesheet href, converting forward slashes to system separators
+        var normalizedHref = href.Replace('/', Path.DirectorySeparatorChar);
+        return Path.Combine(itemDirectory, normalizedHref).Replace('\\', '/');
+    }
+
+    private static async Task<string?> ReadFileContentAsync(string filePath)
+    {
+        try
+        {
+            if (File.Exists(filePath))
+            {
+#if NETSTANDARD2_0
+                return await Task.Run(() => File.ReadAllText(filePath)).ConfigureAwait(false);
+#else
+                return await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+#endif
+            }
+        }
+        catch
+        {
+            // Ignore file access errors
+        }
+        return null;
+    }
+
+    private static async Task<string?> FetchStylesheetContentAsync(string href)
+    {
+        using var response = await DefaultHttpClient.GetAsync(href).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"Failed to fetch stylesheet: {href} (Status: {response.StatusCode})");
+        }
+
+        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+    }
 }
 

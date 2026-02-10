@@ -8,5 +8,9 @@ public sealed class Qti2ToQti3PackageConverterOptions
 
     public QtiItemTransformOptions ItemTransformOptions { get; set; } = new QtiItemTransformOptions();
 
-    public Func<QtiTransform, string, CancellationToken, Task>? OnItemTransformedAsync { get; set; }
+    /// <summary>
+    /// Optional hook that runs per assessment item after built-in transforms.
+    /// Receives the transform, item path, file resolver for ZIP contents, and cancellation token.
+    /// </summary>
+    public Func<QtiTransform, string, Func<string, Task<string?>>?, CancellationToken, Task>? OnItemTransformedAsync { get; set; }
 }

@@ -43,9 +43,10 @@ public sealed class Qti2ToQti3PackageConverterHooksTests
                 MinChoicesToOne = false,
                 ExternalScored = false
             },
-            OnItemTransformedAsync = async (transform, path, ct) =>
+            OnItemTransformedAsync = async (transform, path, fileResolver, ct) =>
             {
                 Assert.Equal(itemPath, path);
+                Assert.NotNull(fileResolver); // Verify file resolver is provided
                 callbackCalled = true;
 
                 await transform.FnChAsync(doc =>

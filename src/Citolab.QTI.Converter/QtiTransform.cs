@@ -178,6 +178,18 @@ public sealed partial class QtiTransform
         return this;
     }
 
+    public async Task<QtiTransform> StylesheetsInlineAsync(Func<string, Task<string?>>? getStylesheetContentAsync = null, string? basePath = null)
+    {
+        await StylesheetsInlineAsync(_doc, getStylesheetContentAsync, basePath).ConfigureAwait(false);
+        return this;
+    }
+
+    public async Task<QtiTransform> StylesheetsInlineAsync(Func<string, string, Task<string?>>? getFileContentAsync = null, string? itemPath = null)
+    {
+        await StylesheetsInlineAsync(_doc, getFileContentAsync, itemPath).ConfigureAwait(false);
+        return this;
+    }
+
     public string Xml()
     {
         if (!_isFragment)
