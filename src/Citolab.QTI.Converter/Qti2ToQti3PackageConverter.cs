@@ -99,6 +99,22 @@ public sealed class Qti2ToQti3PackageConverter : IQtiPackageConverter
                             xml = transform.Xml();
                         }
                     }
+                    else if (detected == QtiPackageXmlType.AssessmentStimulus
+                             && _options.ApplyItemTransforms
+                             && ShouldStripStylesheets(_options.ItemTransformOptions))
+                    {
+                        // Stimulus files are referenced from items via qti-assessment-stimulus-ref and
+                        // are otherwise passed through untouched. When stylesheet stripping is enabled we
+                        // also strip their stylesheets. Convert any QTI 2.x stimulus to QTI 3 first so that
+                        // <stylesheet> becomes <qti-stylesheet>; an already-QTI 3 stimulus is left unchanged.
+                        xml = Qti2ToQti3XmlConverter.Convert(xml);
+
+                        var transform = QtiTransform.Create(xml);
+                        transform.StripStylesheets(
+                            _options.ItemTransformOptions.StripStylesheetsRemovePattern,
+                            _options.ItemTransformOptions.StripStylesheetsKeepPattern);
+                        xml = transform.Xml();
+                    }
 
                     files[relativePath] = QtiPackageFile.FromText(xml, detected);
                 }
@@ -134,15 +150,16 @@ public sealed class Qti2ToQti3PackageConverter : IQtiPackageConverter
         if (options.HideInputsForChoiceInteractionWithImages) transform.HideInputsForChoiceInteractionWithImages();
         if (options.UpgradePci) transform.UpgradePci();
 
-        if (options.StripStylesheets)
-        {
-            transform.StripStylesheets(options.StripStylesheetsRemovePattern, options.StripStylesheetsKeepPattern);
-        }
-        else if (!string.IsNullOrWhiteSpace(options.StripStylesheetsRemovePattern) || !string.IsNullOrWhiteSpace(options.StripStylesheetsKeepPattern))
+        if (ShouldStripStylesheets(options))
         {
             transform.StripStylesheets(options.StripStylesheetsRemovePattern, options.StripStylesheetsKeepPattern);
         }
     }
+
+    private static bool ShouldStripStylesheets(QtiItemTransformOptions options) =>
+        options.StripStylesheets
+        || !string.IsNullOrWhiteSpace(options.StripStylesheetsRemovePattern)
+        || !string.IsNullOrWhiteSpace(options.StripStylesheetsKeepPattern);
 
     private static async Task<string> ReadXmlAsync(Stream stream, CancellationToken cancellationToken)
     {

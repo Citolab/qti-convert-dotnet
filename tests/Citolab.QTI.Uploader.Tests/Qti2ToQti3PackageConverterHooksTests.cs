@@ -67,6 +67,87 @@ public sealed class Qti2ToQti3PackageConverterHooksTests
         Assert.DoesNotContain("<img", outputItemXml);
     }
 
+    [Fact]
+    public async Task ConvertQti2PackageToQti3Async_StripsStylesheetsFromStimulusFiles()
+    {
+        var (inputZipPath, stimulusPath) = CreateStimulusPackage();
+
+        var converter = new Qti2ToQti3PackageConverter(new Qti2ToQti3PackageConverterOptions
+        {
+            ConvertManifest = false,
+            SyncAssessmentItemIdentifiers = false,
+            ItemTransformOptions = new QtiItemTransformOptions { StripStylesheets = true }
+        });
+
+        var outputZipPath = await converter.ConvertQti2PackageToQti3Async(inputZipPath, CancellationToken.None);
+        var stimulusXml = ReadZipEntryText(outputZipPath, stimulusPath);
+
+        Assert.DoesNotContain("qti-stylesheet", stimulusXml); // both stylesheets stripped
+        Assert.Contains("qti-stimulus-body", stimulusXml); // body preserved
+        Assert.Contains("Hello stimulus", stimulusXml);
+    }
+
+    [Fact]
+    public async Task ConvertQti2PackageToQti3Async_HonorsKeepPatternForStimulusStylesheets()
+    {
+        var (inputZipPath, stimulusPath) = CreateStimulusPackage();
+
+        var converter = new Qti2ToQti3PackageConverter(new Qti2ToQti3PackageConverterOptions
+        {
+            ConvertManifest = false,
+            SyncAssessmentItemIdentifiers = false,
+            ItemTransformOptions = new QtiItemTransformOptions { StripStylesheetsKeepPattern = "*keep.css" }
+        });
+
+        var outputZipPath = await converter.ConvertQti2PackageToQti3Async(inputZipPath, CancellationToken.None);
+        var stimulusXml = ReadZipEntryText(outputZipPath, stimulusPath);
+
+        Assert.Contains("css/keep.css", stimulusXml);
+        Assert.DoesNotContain("css/drop.css", stimulusXml);
+    }
+
+    [Fact]
+    public async Task ConvertQti2PackageToQti3Async_LeavesStimulusStylesheetsWhenStrippingDisabled()
+    {
+        var (inputZipPath, stimulusPath) = CreateStimulusPackage();
+
+        var converter = new Qti2ToQti3PackageConverter(new Qti2ToQti3PackageConverterOptions
+        {
+            ConvertManifest = false,
+            SyncAssessmentItemIdentifiers = false,
+            ItemTransformOptions = new QtiItemTransformOptions() // StripStylesheets defaults to false
+        });
+
+        var outputZipPath = await converter.ConvertQti2PackageToQti3Async(inputZipPath, CancellationToken.None);
+        var stimulusXml = ReadZipEntryText(outputZipPath, stimulusPath);
+
+        Assert.Contains("css/keep.css", stimulusXml);
+        Assert.Contains("css/drop.css", stimulusXml);
+    }
+
+    private static (string inputZipPath, string stimulusPath) CreateStimulusPackage()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "Citolab.QTI.Converter.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+
+        var inputZipPath = Path.Combine(tempDir, "input.zip");
+        const string stimulusPath = "ref/stimulus.xml";
+
+        const string stimulusXml = """
+                                   <?xml version="1.0" encoding="UTF-8"?>
+                                   <qti-assessment-stimulus xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0" identifier="STIM1" title="Stimulus">
+                                     <qti-stylesheet href="css/keep.css" type="text/css" />
+                                     <qti-stylesheet href="css/drop.css" type="text/css" />
+                                     <qti-stimulus-body>
+                                       <p>Hello stimulus</p>
+                                     </qti-stimulus-body>
+                                   </qti-assessment-stimulus>
+                                   """;
+
+        CreateZip(inputZipPath, (stimulusPath, stimulusXml));
+        return (inputZipPath, stimulusPath);
+    }
+
     private static void CreateZip(string zipPath, params (string path, string text)[] entries)
     {
         using var output = File.Create(zipPath);

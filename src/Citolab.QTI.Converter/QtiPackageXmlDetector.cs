@@ -8,7 +8,8 @@ internal enum QtiPackageXmlType
     Other,
     Manifest,
     AssessmentItem,
-    AssessmentTest
+    AssessmentTest,
+    AssessmentStimulus
 }
 
 internal static class QtiPackageXmlDetector
@@ -34,6 +35,7 @@ internal static class QtiPackageXmlDetector
                     "manifest" or "imsmanifest" => QtiPackageXmlType.Manifest,
                     "assessmentItem" or "qti-assessment-item" => QtiPackageXmlType.AssessmentItem,
                     "assessmentTest" or "qti-assessment-test" => QtiPackageXmlType.AssessmentTest,
+                    "assessmentStimulus" or "qti-assessment-stimulus" => QtiPackageXmlType.AssessmentStimulus,
                     _ => QtiPackageXmlType.Other
                 };
             }

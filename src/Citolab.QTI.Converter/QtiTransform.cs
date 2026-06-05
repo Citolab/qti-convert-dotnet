@@ -190,6 +190,15 @@ public sealed partial class QtiTransform
         return this;
     }
 
+    public async Task<QtiTransform> WrapStimulusInSectionAsync(
+        Func<string, string, Task<ItemRefNormalizationMeta?>> resolver,
+        WrapStimulusInSectionOptions? options = null)
+    {
+        if (resolver is null) throw new ArgumentNullException(nameof(resolver));
+        await WrapStimulusInSection(_doc, resolver, options).ConfigureAwait(false);
+        return this;
+    }
+
     public string Xml()
     {
         if (!_isFragment)
