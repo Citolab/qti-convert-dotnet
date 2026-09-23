@@ -172,4 +172,4 @@ When processing `item1/question.xml`, the stylesheet `../shared/styles.css` reso
 
 ## License
 
-Apache-2.0, see [LICENSE](LICENSE). The QTI 2 → QTI 3 conversion is a port of the `qti2xTo30.xsl` upgrader by ETS (Apache-2.0); the shared vocabulary stylesheet contains the 1EdTech QTI 3 shared css utility classes.
+GPL-3.0-only, see [LICENSE](LICENSE). The QTI 2 → QTI 3 conversion is a port of the `qti2xTo30.xsl` upgrader by ETS (Apache-2.0); the shared vocabulary stylesheet contains the 1EdTech QTI 3 shared css utility classes.

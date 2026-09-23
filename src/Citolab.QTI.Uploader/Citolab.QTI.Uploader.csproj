@@ -10,7 +10,7 @@
     <Company>Cito</Company>
     <PackageDescription>Upload/extract QTI package zips with a consumer-provided storage callback.</PackageDescription>
     <RepositoryUrl>https://github.com/Citolab/qti-convert-dotnet</RepositoryUrl>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Nullable>enable</Nullable>
