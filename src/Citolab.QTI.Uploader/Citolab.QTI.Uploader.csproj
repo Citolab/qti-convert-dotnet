@@ -5,7 +5,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>Citolab.QTI.Uploader</RootNamespace>
     <PackageId>Citolab.QTI.Uploader</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>Citolab</Authors>
     <Company>Cito</Company>
     <PackageDescription>Upload/extract QTI package zips with a consumer-provided storage callback.</PackageDescription>
