@@ -34,7 +34,7 @@ public sealed class Qti3ToQti21PackageConverterOptions
     public Func<string, ISet<string>, string>? ConvertManifest { get; set; }
 
     /// <summary>
-    /// Adds the 1EdTech QTI 3 shared vocabulary stylesheet (qti3p0.css) next to the manifest and links it from every
+    /// Adds the QTI 3 shared vocabulary stylesheet (qti3-shared-vocabulary.css) next to the manifest and links it from every
     /// item that uses qti-* classes, so QTI 2.1 players can style them. Default true.
     /// </summary>
     public bool InjectSharedVocabularyStylesheet { get; set; } = true;
@@ -165,7 +165,7 @@ public sealed class Qti3ToQti21PackageConverter
             warnings.AddRange(result.Warnings);
         }
 
-        // An existing qti3p0.css in the package is kept (and used)
+        // An existing stylesheet with that name in the package is kept (and used)
         if (itemsWithSharedVocabulary.Count > 0 && !output.ContainsKey(stylesheetPath))
         {
             output[stylesheetPath] = Encode(QtiSharedVocabularyStylesheet.Css);

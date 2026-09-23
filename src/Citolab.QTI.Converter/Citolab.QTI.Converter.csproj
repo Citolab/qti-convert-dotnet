@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Assets\qti3p0.css" LogicalName="Citolab.QTI.Converter.qti3p0.css" />
+    <EmbeddedResource Include="Assets\qti3-shared-vocabulary.css" LogicalName="Citolab.QTI.Converter.qti3-shared-vocabulary.css" />
     <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
