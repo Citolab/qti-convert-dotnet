@@ -73,6 +73,34 @@ var options = new QtiUploaderOptions
 
 The QTI 2.x → QTI 3 conversion is plain .NET (`System.Xml.Linq`, no XSLT processor or other dependencies) and behaves the same on `net9.0` and `netstandard2.0`. It is a port of the `qti2xTo30.xsl` upgrader and is tested against that XSLT's recorded output.
 
+## QTI 3 → QTI 2.1 conversion
+
+`Qti3ToQti21PackageConverter` converts a QTI 3 package back to QTI 2.1 (best-effort). Constructs without a QTI 2.1
+equivalent are converted or removed and reported as warnings:
+
+- shared stimuli are inlined into the items that reference them (and removed from the package and manifest)
+- HTML5 `audio`/`video` become `object`, an `img` in graphic interactions becomes the required `object`, and a
+  gap text with only an image becomes a `gapImg`
+- a PCI is wrapped in a `customInteraction`; `data-*`, `aria-*`, `role`, `dir` and SSML are removed
+- HTML5-only elements (`section`, `figure`, `ruby`, ...) become `div`/`span`
+
+```csharp
+using Citolab.QTI.Converter;
+
+var converter = new Qti3ToQti21PackageConverter();
+var result = await converter.ConvertQti3PackageToQti21Async("package.zip", cancellationToken); // writes package-qti21.zip
+foreach (var warning in result.Warnings) Console.WriteLine(warning);
+
+// or with streams
+var warnings = await converter.ConvertAsync(inputStream, outputStream, cancellationToken);
+
+// or a single file
+var item = Qti3ToQti21XmlConverter.Convert(qti3Xml);
+```
+
+The item, test and manifest conversions can be replaced via `Qti3ToQti21PackageConverterOptions`
+(`ConvertItem`, `ConvertAssessment`, `ConvertManifest`). The output is tested against the official QTI 2.1 XSD.
+
 ## Item transformations
 
 When converting an assessment item, the converter can apply a set of optional XML transformations via `QtiTransform` and `QtiItemTransformOptions`.
