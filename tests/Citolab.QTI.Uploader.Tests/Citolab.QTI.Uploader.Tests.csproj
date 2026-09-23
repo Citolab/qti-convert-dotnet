@@ -25,6 +25,9 @@
     <None Include="..\TestData\qti3-sample.zip" Link="TestData\\qti3-sample.zip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\TestData\upgrader-fixtures\*.xml" Link="TestData\upgrader-fixtures\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

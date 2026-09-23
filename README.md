@@ -71,7 +71,7 @@ var options = new QtiUploaderOptions
 };
 ```
 
-The converter uses the `qti2xTo30.xsl` XSLT 3.0 upgrader (embedded in the NuGet) when running on `net9.0`. For `netstandard2.0`, it falls back to a best-effort built-in conversion.
+The QTI 2.x → QTI 3 conversion is plain .NET (`System.Xml.Linq`, no XSLT processor or other dependencies) and behaves the same on `net9.0` and `netstandard2.0`. It is a port of the `qti2xTo30.xsl` upgrader and is tested against that XSLT's recorded output.
 
 ## Item transformations
 

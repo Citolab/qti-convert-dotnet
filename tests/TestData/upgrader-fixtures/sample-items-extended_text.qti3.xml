@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://purl.imsglobal.org/spec/qti/v3p0/schema/xsd/imsqti_asiv3p0_v1p0.xsd" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<!-- Thie example adapted from the PET Handbook, copyright University of Cambridge ESOL Examinations --><qti-assessment-item xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsglobal.org/xsd/imsqtiasi_v3p0 https://purl.imsglobal.org/spec/qti/v3p0/schema/xsd/imsqti_asiv3p0_v1p0.xsd" identifier="extendedText" title="Writing a Postcard" adaptive="false" time-dependent="false">
+	<qti-response-declaration identifier="RESPONSE" cardinality="single" base-type="string"/>
+	<qti-outcome-declaration identifier="SCORE" cardinality="single" base-type="float"/>
+	<qti-item-body>
+		<p>Read this postcard from your English pen-friend, Sam.</p>
+		<div>
+			<img src="images/postcard.png" alt="&#xA;&#x9;&#x9;&#x9;&#x9;&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;Here is a postcard of my town. Please send me a postcard from your town.&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;What size is your town? What is the nicest part of your town?&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;Where do you go in the evenings? Sam.&#xA;&#x9;&#x9;&#x9;&#x9;&#xA;&#x9;&#x9;&#x9;"/>
+		</div>
+		<qti-extended-text-interaction response-identifier="RESPONSE" expected-length="200">
+			<qti-prompt>Write Sam a postcard. Answer the questions. Write 25-35 words.</qti-prompt>
+		</qti-extended-text-interaction>
+	</qti-item-body>
+</qti-assessment-item>
