@@ -53,6 +53,16 @@ internal static class QtiPackagePath
     public static string Join(string baseDirectory, string relative) =>
         baseDirectory.Length == 0 ? Normalize(relative) : Normalize($"{baseDirectory}/{relative}");
 
+    /// <summary>Path of <paramref name="target"/> relative to the directory <paramref name="fromDirectory"/>.</summary>
+    public static string Relative(string fromDirectory, string target)
+    {
+        var from = Normalize(fromDirectory).Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        var to = Normalize(target).Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        var common = 0;
+        while (common < from.Length && common < to.Length - 1 && from[common] == to[common]) common++;
+        return string.Join("/", Enumerable.Repeat("..", from.Length - common).Concat(to.Skip(common)));
+    }
+
     public static string MimeTypeFromPath(string path)
     {
         var clean = path.Split('?', '#')[0];

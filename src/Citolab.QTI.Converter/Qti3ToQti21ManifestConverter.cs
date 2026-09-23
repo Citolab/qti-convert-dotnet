@@ -108,7 +108,43 @@ public static class Qti3ToQti21ManifestConverter
         }
         foreach (var stimulus in inlinedStimuli.Values) stimulus.Remove();
 
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-               string.Join("\n", doc.Nodes().Select(n => n.ToString(SaveOptions.DisableFormatting)));
+        return Serialize(doc);
     }
+
+    /// <summary>Registers the shared vocabulary stylesheet as a webcontent resource and a dependency of the given items.</summary>
+    public static string AddSharedVocabularyStylesheet(string manifestXml, string manifestPath, string stylesheetPath, IEnumerable<string> itemPaths)
+    {
+        var doc = XDocument.Parse(manifestXml, LoadOptions.PreserveWhitespace);
+        var resourcesElement = doc.Root?.Descendants().FirstOrDefault(e => e.Name.LocalName == "resources");
+        if (resourcesElement is null) return manifestXml;
+
+        var ns = resourcesElement.Name.Namespace;
+        var manifestDirectory = QtiPackagePath.DirectoryName(manifestPath);
+        string PackagePathOf(XElement resource) => QtiPackagePath.Join(manifestDirectory, (string?)resource.Attribute("href") ?? string.Empty);
+
+        var resources = resourcesElement.Elements().Where(e => e.Name.LocalName == "resource").ToList();
+        var existing = resources.FirstOrDefault(r => PackagePathOf(r) == QtiPackagePath.Normalize(stylesheetPath));
+        var identifier = (string?)existing?.Attribute("identifier") ?? "QTI3_SHARED_VOCABULARY_CSS";
+        if (existing is null)
+        {
+            var href = QtiPackagePath.Relative(manifestDirectory, stylesheetPath);
+            resourcesElement.Add(new XElement(ns + "resource",
+                new XAttribute("identifier", identifier), new XAttribute("type", "webcontent"), new XAttribute("href", href),
+                new XElement(ns + "file", new XAttribute("href", href))));
+        }
+
+        var items = new HashSet<string>(itemPaths.Select(QtiPackagePath.Normalize), StringComparer.OrdinalIgnoreCase);
+        foreach (var resource in resources.Where(r => items.Contains(PackagePathOf(r))))
+        {
+            if (!resource.Elements().Any(e => e.Name.LocalName == "dependency" && (string?)e.Attribute("identifierref") == identifier))
+            {
+                resource.Add(new XElement(ns + "dependency", new XAttribute("identifierref", identifier)));
+            }
+        }
+        return Serialize(doc);
+    }
+
+    private static string Serialize(XDocument doc) =>
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        string.Join("\n", doc.Nodes().Select(n => n.ToString(SaveOptions.DisableFormatting)));
 }

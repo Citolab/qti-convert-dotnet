@@ -83,6 +83,9 @@ equivalent are converted or removed and reported as warnings:
   gap text with only an image becomes a `gapImg`
 - a PCI is wrapped in a `customInteraction`; `data-*`, `aria-*`, `role`, `dir` and SSML are removed
 - HTML5-only elements (`section`, `figure`, `ruby`, ...) become `div`/`span`
+- items that use QTI 3 shared vocabulary classes (`qti-layout-row`, `qti-underline`, ...) get a stylesheet to the
+  1EdTech `qti3p0.css` (unmodified), which is added next to the manifest and registered in it
+  (`InjectSharedVocabularyStylesheet`, default on)
 
 ```csharp
 using Citolab.QTI.Converter;

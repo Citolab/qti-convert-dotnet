@@ -18,6 +18,7 @@ public enum Qti21WarningCode
     Html5Element,
     Pci,
     SharedVocabularyClasses,
+    SharedVocabularyStylesheet,
     AccessibilityAttributesRemoved,
     GapTextToGapImg
 }
@@ -61,6 +62,12 @@ public sealed class Qti3ToQti21ConvertOptions
 
     /// <summary>Used to tag warnings.</summary>
     public string? FilePath { get; set; }
+
+    /// <summary>
+    /// When set, an item that uses QTI 3 shared vocabulary classes (qti-*) gets a stylesheet with this href, so a QTI
+    /// 2.1 player can style them. The file itself (<see cref="QtiSharedVocabularyStylesheet.Css"/>) is up to the caller.
+    /// </summary>
+    public string? SharedVocabularyStylesheetHref { get; set; }
 }
 
 /// <summary>
@@ -180,9 +187,28 @@ public static class Qti3ToQti21XmlConverter
         foreach (var picture in root.Descendants(Qti3 + "picture").ToList()) Unwrap(picture);
         StripSsml(root, warnings);
 
-        if (root.DescendantsAndSelf().Any(e => ((string?)e.Attribute("class") ?? string.Empty).Contains("qti-")))
+        // qti-shared-stimulus marks inlined stimuli (added by this converter) and is not part of the vocabulary
+        var usesSharedVocabulary = root.DescendantsAndSelf().Any(e =>
+            ((string?)e.Attribute("class") ?? string.Empty)
+            .Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+            .Any(c => c.StartsWith("qti-", StringComparison.Ordinal) && c != "qti-shared-stimulus"));
+        if (usesSharedVocabulary)
         {
-            warnings.Add(Qti21WarningCode.SharedVocabularyClasses, "QTI 3 shared vocabulary classes (qti-*) were kept; QTI 2.1 players will ignore them.");
+            var href = options.SharedVocabularyStylesheetHref;
+            var itemBody = root.Element(Qti3 + "qti-item-body");
+            if (!string.IsNullOrEmpty(href) && root.Name == Qti3 + "qti-assessment-item" && itemBody is not null)
+            {
+                // stylesheets come right before the item body in QTI 2.1
+                if (!root.Elements(Qti3 + "qti-stylesheet").Any(s => (string?)s.Attribute("href") == href))
+                {
+                    itemBody.AddBeforeSelf(new XElement(Qti3 + "qti-stylesheet", new XAttribute("href", href!), new XAttribute("type", "text/css")));
+                }
+                warnings.Add(Qti21WarningCode.SharedVocabularyStylesheet, $"QTI 3 shared vocabulary classes (qti-*) are styled by the added {href} stylesheet.");
+            }
+            else
+            {
+                warnings.Add(Qti21WarningCode.SharedVocabularyClasses, "QTI 3 shared vocabulary classes (qti-*) were kept; QTI 2.1 players will ignore them.");
+            }
         }
 
         var dataAttributes = 0;

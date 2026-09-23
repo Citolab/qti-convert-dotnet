@@ -7,10 +7,11 @@ namespace Citolab.QTI.Converter;
 /// <summary>Context for converting one file of a package.</summary>
 public sealed class Qti21FileContext
 {
-    public Qti21FileContext(string path, Func<string, string?> resolveStimulus)
+    public Qti21FileContext(string path, Func<string, string?> resolveStimulus, string? sharedVocabularyStylesheetHref = null)
     {
         Path = path;
         ResolveStimulus = resolveStimulus;
+        SharedVocabularyStylesheetHref = sharedVocabularyStylesheetHref;
     }
 
     /// <summary>Path of the file inside the package.</summary>
@@ -18,6 +19,9 @@ public sealed class Qti21FileContext
 
     /// <summary>Resolves a stimulus href relative to this file to its QTI 3 XML (and marks it as inlined).</summary>
     public Func<string, string?> ResolveStimulus { get; }
+
+    /// <summary>Href (relative to this file) of the shared vocabulary stylesheet, unless it is switched off.</summary>
+    public string? SharedVocabularyStylesheetHref { get; }
 }
 
 /// <summary>Overrides for the default conversions, like the hooks of <see cref="Qti2ToQti3PackageConverter"/>.</summary>
@@ -28,6 +32,12 @@ public sealed class Qti3ToQti21PackageConverterOptions
 
     /// <summary>Receives the manifest XML and the package paths of the stimuli that were inlined into items.</summary>
     public Func<string, ISet<string>, string>? ConvertManifest { get; set; }
+
+    /// <summary>
+    /// Adds the 1EdTech QTI 3 shared vocabulary stylesheet (qti3p0.css) next to the manifest and links it from every
+    /// item that uses qti-* classes, so QTI 2.1 players can style them. Default true.
+    /// </summary>
+    public bool InjectSharedVocabularyStylesheet { get; set; } = true;
 }
 
 public sealed class Qti3ToQti21PackageConversionResult
@@ -92,6 +102,10 @@ public sealed class Qti3ToQti21PackageConverter
         var output = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         var stimulusPaths = new List<string>();
         var manifestPaths = new List<string>();
+        var itemsWithSharedVocabulary = new List<string>();
+        // The package root is the folder of the manifest; the stylesheet goes there
+        var manifestPath = xmlFiles.Keys.FirstOrDefault(p => RootLocalName(xmlFiles[p]) == "manifest");
+        var stylesheetPath = QtiPackagePath.Join(QtiPackagePath.DirectoryName(manifestPath ?? string.Empty), QtiSharedVocabularyStylesheet.FileName);
 
         foreach (var file in files)
         {
@@ -119,19 +133,28 @@ public sealed class Qti3ToQti21PackageConverter
                 continue;
             }
 
-            var context = new Qti21FileContext(path, href =>
-            {
-                var stimulusPath = QtiPackagePath.Join(QtiPackagePath.DirectoryName(path), href);
-                if (!byNormalizedPath.TryGetValue(stimulusPath, out var actualPath)) return null;
-                inlinedStimulusPaths.Add(QtiPackagePath.Normalize(actualPath));
-                return xmlFiles[actualPath];
-            });
+            var context = new Qti21FileContext(
+                path,
+                href =>
+                {
+                    var stimulusPath = QtiPackagePath.Join(QtiPackagePath.DirectoryName(path), href);
+                    if (!byNormalizedPath.TryGetValue(stimulusPath, out var actualPath)) return null;
+                    inlinedStimulusPaths.Add(QtiPackagePath.Normalize(actualPath));
+                    return xmlFiles[actualPath];
+                },
+                _options.InjectSharedVocabularyStylesheet ? QtiPackagePath.Relative(QtiPackagePath.DirectoryName(path), stylesheetPath) : null);
             var convert = root == "qti-assessment-test" ? _options.ConvertAssessment : _options.ConvertItem;
             var result = convert is not null
                 ? convert(xml, context)
-                : Qti3ToQti21XmlConverter.Convert(xml, new Qti3ToQti21ConvertOptions { FilePath = path, ResolveStimulus = context.ResolveStimulus });
+                : Qti3ToQti21XmlConverter.Convert(xml, new Qti3ToQti21ConvertOptions
+                {
+                    FilePath = path,
+                    ResolveStimulus = context.ResolveStimulus,
+                    SharedVocabularyStylesheetHref = context.SharedVocabularyStylesheetHref
+                });
             output[path] = Encode(result.Xml);
             warnings.AddRange(result.Warnings);
+            if (result.Warnings.Any(w => w.Code == Qti21WarningCode.SharedVocabularyStylesheet)) itemsWithSharedVocabulary.Add(path);
         }
 
         // Stimuli that no item referenced are kept (as a QTI 2.2 assessmentStimulus)
@@ -142,10 +165,21 @@ public sealed class Qti3ToQti21PackageConverter
             warnings.AddRange(result.Warnings);
         }
 
+        // An existing qti3p0.css in the package is kept (and used)
+        if (itemsWithSharedVocabulary.Count > 0 && !output.ContainsKey(stylesheetPath))
+        {
+            output[stylesheetPath] = Encode(QtiSharedVocabularyStylesheet.Css);
+        }
+
         foreach (var path in manifestPaths)
         {
             var convertManifest = _options.ConvertManifest ?? ((xml, inlined) => Qti3ToQti21ManifestConverter.Convert(xml, inlined));
-            output[path] = Encode(convertManifest(xmlFiles[path], inlinedStimulusPaths));
+            var manifest = convertManifest(xmlFiles[path], inlinedStimulusPaths);
+            if (itemsWithSharedVocabulary.Count > 0)
+            {
+                manifest = Qti3ToQti21ManifestConverter.AddSharedVocabularyStylesheet(manifest, path, stylesheetPath, itemsWithSharedVocabulary);
+            }
+            output[path] = Encode(manifest);
         }
 
         return (output, warnings);
