@@ -292,6 +292,118 @@ public sealed class QtiTransformTests
 
         var dialog = doc.Descendants().Single(e => (string?)e.Attribute("id") == id);
         Assert.NotNull(dialog.Attribute("popover"));
+
+        // qti-components empties every [data-stimulus-idref], which would wipe the trigger content
+        var trigger = button.Descendants().Single(e => (string?)e.Attribute("class") == "dep-dialogTrigger");
+        Assert.Null(trigger.Attribute("data-stimulus-idref"));
+        Assert.Equal("button", (string?)button.Attribute("type"));
+    }
+
+    private static string EnlargeItem(string triggerContent, string dialogAttributes) => $"""
+        <qti-assessment-item xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0" identifier="ITM-enlarge" title="enlarge" time-dependent="false">
+          <qti-item-body>
+            <p>Klik op de kaart voor een vergroting.</p>
+            <div class="dep-dialogTrigger" data-stimulus-idref="WIN_kaart1">{triggerContent}</div>
+            <div id="WIN_kaart1" class="dep-dialog hide-dialog" {dialogAttributes}>
+              <img src="../img/kaart1-groot.jpg" width="425" alt="Kaart 1 (groot)" />
+            </div>
+          </qti-item-body>
+        </qti-assessment-item>
+        """;
+
+    private const string SmallImage = """<img src="../img/kaart1-klein.jpg" width="150" alt="Kaart 1 (klein)" />""";
+
+    [Fact]
+    public void DepConvert_ImageTrigger_HasNoButtonLookButZoomInCursor()
+    {
+        var result = QtiTransform.Create(EnlargeItem(SmallImage, "")).DepConvert().Xml();
+        var button = XDocument.Parse(result).Descendants().Single(e => e.Name.LocalName == "button");
+
+        var style = (string?)button.Attribute("style");
+        Assert.Contains("border: 0", style);
+        Assert.Contains("background: none", style);
+        Assert.Contains("cursor: zoom-in", style);
+    }
+
+    [Fact]
+    public void DepConvert_TextTrigger_KeepsButtonLookWithPointerCursor()
+    {
+        var result = QtiTransform.Create(EnlargeItem("<p>Bekijk de kaart</p>", "")).DepConvert().Xml();
+        var button = XDocument.Parse(result).Descendants().Single(e => e.Name.LocalName == "button");
+
+        Assert.Equal("cursor: pointer;", (string?)button.Attribute("style"));
+    }
+
+    [Fact]
+    public void DepConvertExtended_ConvertsDialogToDepPopup()
+    {
+        var input = EnlargeItem(SmallImage,
+            """data-dep-dialog-caption="Kaart 1" data-dep-dialog-width="460" data-dep-dialog-height="308" data-dep-dialog-resizemode="fixed" data-dep-dialog-modal="false" """);
+
+        var result = QtiTransform.Create(input).DepConvertExtended().Xml();
+        var doc = XDocument.Parse(result);
+
+        var popup = doc.Descendants().Single(e => e.Name.LocalName == "dep-popup");
+        Assert.Equal("qti-item-body", popup.Parent!.Name.LocalName);
+        Assert.Equal("Kaart 1", (string?)popup.Attribute("caption"));
+        Assert.Equal("460", (string?)popup.Attribute("width"));
+        Assert.Equal("308", (string?)popup.Attribute("height"));
+        Assert.Equal("fixed", (string?)popup.Attribute("resizemode"));
+        Assert.Equal("false", (string?)popup.Attribute("modal"));
+
+        // thumbnail stays in the default slot, the enlarged image moves to the popup slot
+        var trigger = popup.Elements().Single(e => (string?)e.Attribute("class") == "dep-dialogTrigger");
+        Assert.Equal("../img/kaart1-klein.jpg", (string?)trigger.Descendants().Single(e => e.Name.LocalName == "img").Attribute("src"));
+        var slot = popup.Elements().Single(e => (string?)e.Attribute("slot") == "popup");
+        Assert.Equal("../img/kaart1-groot.jpg", (string?)slot.Descendants().Single(e => e.Name.LocalName == "img").Attribute("src"));
+
+        // the original dialog is gone
+        Assert.DoesNotContain(doc.Descendants(), e => (string?)e.Attribute("id") == "WIN_kaart1");
+    }
+
+    [Fact]
+    public void DepConvertExtended_TriggerHasNoStimulusIdref()
+    {
+        var result = QtiTransform.Create(EnlargeItem(SmallImage, """data-dep-dialog-caption="Kaart 1" """)).DepConvertExtended().Xml();
+        var doc = XDocument.Parse(result);
+
+        // qti-components empties every [data-stimulus-idref], which would wipe the thumbnail
+        Assert.DoesNotContain(doc.Descendants(), e => e.Attribute("data-stimulus-idref") is not null);
+        Assert.Single(doc.Descendants().Where(e => e.Name.LocalName == "dep-popup").Descendants().Where(e => e.Name.LocalName == "img" && ((string?)e.Attribute("src"))!.EndsWith("klein.jpg")));
+    }
+
+    [Fact]
+    public void DepConvertExtended_OnlySetsDialogSettingsThatArePresent()
+    {
+        var result = QtiTransform.Create(EnlargeItem(SmallImage, """data-dep-dialog-caption="Kaart 1" data-dep-dialog-resizemode="auto" """))
+            .DepConvertExtended()
+            .Xml();
+        var popup = XDocument.Parse(result).Descendants().Single(e => e.Name.LocalName == "dep-popup");
+
+        Assert.Equal("Kaart 1", (string?)popup.Attribute("caption"));
+        Assert.Equal("auto", (string?)popup.Attribute("resizemode"));
+        // an empty modal/width/height would switch dep-popup to modal and size 0
+        Assert.Null(popup.Attribute("modal"));
+        Assert.Null(popup.Attribute("width"));
+        Assert.Null(popup.Attribute("height"));
+    }
+
+    [Fact]
+    public void DepConvertExtended_TriggerWithoutDialog_IsLeftUntouched()
+    {
+        const string input = """
+                             <qti-assessment-item xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0">
+                               <qti-item-body>
+                                 <div class="dep-dialogTrigger" data-stimulus-idref="WIN_missing"><img src="a.jpg" alt="" /></div>
+                               </qti-item-body>
+                             </qti-assessment-item>
+                             """;
+
+        var result = QtiTransform.Create(input).DepConvertExtended().Xml();
+        var doc = XDocument.Parse(result);
+
+        Assert.DoesNotContain(doc.Descendants(), e => e.Name.LocalName == "dep-popup");
+        Assert.Equal("WIN_missing", (string?)doc.Descendants().Single(e => (string?)e.Attribute("class") == "dep-dialogTrigger").Attribute("data-stimulus-idref"));
     }
 
     [Fact]

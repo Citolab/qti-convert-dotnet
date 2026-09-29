@@ -55,13 +55,36 @@ public sealed partial class QtiTransform
             var dialog = doc.Descendants().FirstOrDefault(e => string.Equals((string?)e.Attribute("id"), refId, StringComparison.Ordinal));
             dialog?.SetAttributeValue("popover", "");
 
+            // data-stimulus-idref is also the shared-stimulus hook of qti-components, which empties
+            // every element carrying it; the button's popovertarget takes over the reference.
+            var triggerCopy = new XElement(trigger);
+            triggerCopy.SetAttributeValue("data-stimulus-idref", null);
+
+            // An image that opens an enlargement should look like the image, not like a button; the
+            // cursor shows it can be clicked. A text trigger keeps the button look.
+            var isImageOnly = string.IsNullOrWhiteSpace(trigger.Value)
+                && trigger.Descendants().Any(e => e.Name.LocalName is "img" or "picture" or "svg");
+            var style = isImageOnly ? "background: none; border: 0; padding: 0; cursor: zoom-in;" : "cursor: pointer;";
+
             var button = new XElement(trigger.Name.Namespace + "button",
+                new XAttribute("type", "button"),
                 new XAttribute("popovertarget", refId),
-                new XElement(trigger));
+                new XAttribute("style", style),
+                triggerCopy);
 
             trigger.ReplaceWith(button);
         }
     }
+
+    // Maps the DEP dialog settings onto the matching <dep-popup> attributes.
+    private static readonly (string DialogAttribute, string PopupAttribute)[] DepDialogAttributes =
+    [
+        ("data-dep-dialog-caption", "caption"),
+        ("data-dep-dialog-width", "width"),
+        ("data-dep-dialog-height", "height"),
+        ("data-dep-dialog-resizemode", "resizemode"),
+        ("data-dep-dialog-modal", "modal"),
+    ];
 
     private static void DepConvertExtended(XDocument doc)
     {
@@ -74,19 +97,22 @@ public sealed partial class QtiTransform
             var dialog = doc.Descendants().FirstOrDefault(e => string.Equals((string?)e.Attribute("id"), refId, StringComparison.Ordinal));
             if (dialog is null) continue;
 
-            var caption = (string?)dialog.Attribute("data-dep-dialog-caption") ?? string.Empty;
-            var width = (string?)dialog.Attribute("data-dep-dialog-width") ?? string.Empty;
-            var height = (string?)dialog.Attribute("data-dep-dialog-height") ?? string.Empty;
-            var resizemode = (string?)dialog.Attribute("data-dep-dialog-resizemode") ?? string.Empty;
-            var modal = (string?)dialog.Attribute("data-dep-dialog-modal") ?? string.Empty;
+            // Only copy settings that are present: an empty attribute is not "unset" for dep-popup
+            // (modal="" means modal, width="" becomes 0).
+            var popup = new XElement(trigger.Name.Namespace + "dep-popup");
+            foreach (var (dialogAttribute, popupAttribute) in DepDialogAttributes)
+            {
+                var value = (string?)dialog.Attribute(dialogAttribute);
+                if (!string.IsNullOrEmpty(value)) popup.SetAttributeValue(popupAttribute, value);
+            }
 
-            var popup = new XElement(trigger.Name.Namespace + "dep-popup",
-                new XAttribute("caption", caption),
-                new XAttribute("width", width),
-                new XAttribute("height", height),
-                new XAttribute("resizemode", resizemode),
-                new XAttribute("modal", modal),
-                new XElement(trigger),
+            // data-stimulus-idref is also the shared-stimulus hook of qti-components, which empties every
+            // element carrying it; left on the trigger, the thumbnail would be wiped before it is shown.
+            var triggerCopy = new XElement(trigger);
+            triggerCopy.SetAttributeValue("data-stimulus-idref", null);
+
+            popup.Add(
+                triggerCopy,
                 new XElement(trigger.Name.Namespace + "div", new XAttribute("slot", "popup"), dialog.Nodes()));
 
             dialog.Remove();
