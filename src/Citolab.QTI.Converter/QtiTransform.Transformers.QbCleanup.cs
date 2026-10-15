@@ -137,7 +137,16 @@ public sealed partial class QtiTransform
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        var responseProcessingList = doc.Descendants().Where(e => e.Name.LocalName == "qti-response-processing").ToList();
+        // An adaptive item is answered in attempts and its outcomes carry over from one attempt to the next (QTI 3
+        // impl guide 3.7.2): resetting them would undo what the previous attempt did (a follow-up step, a hint, a score
+        // already given). Its response processing manages its own outcomes.
+        var adaptive = string.Equals(
+            ((string?)doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "qti-assessment-item")?.Attribute("adaptive"))?.Trim(),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+        var responseProcessingList = adaptive
+            ? []
+            : doc.Descendants().Where(e => e.Name.LocalName == "qti-response-processing").ToList();
         foreach (var responseProcessing in responseProcessingList)
         {
             foreach (var variableId in variableIds)

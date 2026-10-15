@@ -442,5 +442,29 @@ public sealed class QtiTransformQbCleanupTests
         var result = QtiTransform.Create(input).QbCleanup().Xml();
         XmlAssert.Equal(result, expected);
     }
-}
 
+    [Fact]
+    public void QbCleanup_LeavesTheOutcomesOfAnAdaptiveItemAlone()
+    {
+        const string input = """
+                             <?xml version="1.0" encoding="UTF-8"?>
+                             <qti-assessment-item adaptive="true">
+                               <qti-item-body><p>x</p></qti-item-body>
+                               <qti-response-processing>
+                                 <qti-response-condition>
+                                   <qti-response-if>
+                                     <qti-match><qti-variable identifier="STEP"/><qti-base-value base-type="integer">1</qti-base-value></qti-match>
+                                     <qti-set-outcome-value identifier="STEP"><qti-base-value base-type="integer">2</qti-base-value></qti-set-outcome-value>
+                                   </qti-response-if>
+                                 </qti-response-condition>
+                               </qti-response-processing>
+                             </qti-assessment-item>
+                             """;
+
+        var result = QtiTransform.Create(input).QbCleanup().Xml();
+
+        var processing = result[result.IndexOf("<qti-response-processing>", StringComparison.Ordinal)..];
+        Assert.True(processing.IndexOf("<qti-response-condition>", StringComparison.Ordinal) < processing.IndexOf("<qti-set-outcome-value", StringComparison.Ordinal));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(processing, "<qti-set-outcome-value"));
+    }
+}
