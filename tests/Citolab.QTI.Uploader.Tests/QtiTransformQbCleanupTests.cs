@@ -467,4 +467,36 @@ public sealed class QtiTransformQbCleanupTests
         Assert.True(processing.IndexOf("<qti-response-condition>", StringComparison.Ordinal) < processing.IndexOf("<qti-set-outcome-value", StringComparison.Ordinal));
         Assert.Single(System.Text.RegularExpressions.Regex.Matches(processing, "<qti-set-outcome-value"));
     }
+
+    [Fact]
+    public void QbCleanup_ReplacesSpanWithOnlyWhitespaceWithASpace()
+    {
+        const string input = """
+                             <qti-item-body>
+                               <p>Is het <strong>niet</strong><span> </span><strong>waar</strong>?</p>
+                               <p>Is het <strong>niet</strong><span class="x">&#xa0;</span><strong>waar</strong>?</p>
+                             </qti-item-body>
+                             """;
+
+        var result = QtiTransform.Create(input).QbCleanup().Xml();
+
+        Assert.Equal(2, CountOccurrences(result, "<strong>niet</strong> <strong>waar</strong>?"));
+    }
+
+    [Fact]
+    public void QbCleanup_CollapsingSpanKeepsWhitespaceAroundChildSpan()
+    {
+        const string input = """
+                             <qti-item-body>
+                               <p>een<span> <span>woord</span> </span>hier</p>
+                             </qti-item-body>
+                             """;
+
+        var result = QtiTransform.Create(input).QbCleanup().Xml();
+
+        Assert.Contains("<p>een woord hier</p>", result);
+    }
+
+    private static int CountOccurrences(string text, string value) =>
+        (text.Length - text.Replace(value, string.Empty, StringComparison.Ordinal).Length) / value.Length;
 }

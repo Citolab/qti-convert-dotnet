@@ -187,7 +187,9 @@ public sealed class QtiPackageUploader
                 QtiXmlUtilities.IsQtiAssessmentItemOrTest(memoryStream, out xmlKind, out _))
             {
                 memoryStream.Position = 0;
-                var xdoc = XDocument.Load(memoryStream);
+                // PreserveWhitespace: without it the whitespace-only text node in `<strong>niet</strong> <strong>waar</strong>`
+                // is dropped and the words run together.
+                var xdoc = XDocument.Load(memoryStream, LoadOptions.PreserveWhitespace);
                 QtiXmlUtilities.CleanXml(xdoc.Root);
                 var prettyXml = QtiXmlUtilities.PrettyPrintXml(xdoc);
 

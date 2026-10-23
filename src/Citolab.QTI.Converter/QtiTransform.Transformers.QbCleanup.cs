@@ -211,14 +211,14 @@ public sealed partial class QtiTransform
 
                 if ((string.IsNullOrWhiteSpace(textContent) || htmlContent == string.Empty || htmlContent == "&nbsp;") && !hasQtiElements)
                 {
-                    span.Remove();
+                    RemoveKeepingSpace(span);
                     changed = true;
                     continue;
                 }
 
                 if (string.IsNullOrWhiteSpace(textContent) && Regex.IsMatch(htmlContent, @"^[\s&nbsp;]*$") && !hasQtiElements)
                 {
-                    span.Remove();
+                    RemoveKeepingSpace(span);
                     changed = true;
                     continue;
                 }
@@ -257,7 +257,10 @@ public sealed partial class QtiTransform
 
                         if (hasOnlyWhitespaceAndOneSpan)
                         {
-                            span.ReplaceWith(childSpan.Nodes());
+                            // Unwrap both rather than replacing the span with the child's content: the
+                            // whitespace around the child separates it from the surrounding words.
+                            UnwrapElement(childSpan);
+                            UnwrapElement(span);
                             changed = true;
                             continue;
                         }
@@ -272,10 +275,10 @@ public sealed partial class QtiTransform
                     var childHtml = string.Concat(childSpan.Nodes().Select(n => n.ToString(SaveOptions.DisableFormatting))).Trim();
                     if (string.IsNullOrWhiteSpace(childText) || childHtml == string.Empty || childHtml == "&nbsp;")
                     {
-                        childSpan.Remove();
+                        RemoveKeepingSpace(childSpan);
                         if (string.IsNullOrWhiteSpace(span.Value.Trim()))
                         {
-                            span.Remove();
+                            RemoveKeepingSpace(span);
                             changed = true;
                             continue;
                         }

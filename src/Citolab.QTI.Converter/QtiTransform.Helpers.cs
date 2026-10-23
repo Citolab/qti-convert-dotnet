@@ -9,6 +9,14 @@ public sealed partial class QtiTransform
         element.ReplaceWith(element.Nodes());
     }
 
+    // A span that holds only whitespace still separates the words around it
+    // (`<strong>niet</strong><span> </span><strong>waar</strong>`), so a space takes its place.
+    private static void RemoveKeepingSpace(XElement element)
+    {
+        if (element.Value.Length == 0) element.Remove();
+        else element.ReplaceWith(new XText(" "));
+    }
+
     private static bool HasClass(XElement element, string className)
     {
         var cls = (string?)element.Attribute("class");

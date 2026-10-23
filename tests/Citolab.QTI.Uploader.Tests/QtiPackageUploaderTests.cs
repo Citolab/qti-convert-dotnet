@@ -110,6 +110,48 @@ public sealed class QtiPackageUploaderTests
         Assert.DoesNotContain(store.StoredFiles, f => f.Kind == QtiStoredFileKind.ConvertedPackage);
     }
 
+    [Fact]
+    public async Task Upload_CleanAndPrettyPrint_KeepsWhitespaceBetweenInlineElements()
+    {
+        const string itemXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <qti-assessment-item xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0" identifier="ITM-1" title="ws">
+              <qti-item-body>
+                <p>Geef aan of ze <strong>waar</strong> of <strong>niet</strong> <strong>waar</strong> zijn.</p>
+                <p>Kies <strong>niet</strong><span> </span><strong>waar</strong> of een<span> <span>woord</span> </span>hier.</p>
+              </qti-item-body>
+            </qti-assessment-item>
+            """;
+        using var zipStream = new MemoryStream();
+        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            using var writer = new StreamWriter(archive.CreateEntry("items/item.xml").Open(), Encoding.UTF8);
+            writer.Write(itemXml);
+        }
+        var zipBytes = zipStream.ToArray();
+        var input = new QtiPackageUploadInput(
+            FileName: "ws.zip",
+            Length: zipBytes.Length,
+            OpenReadStream: () => new MemoryStream(zipBytes),
+            ContentType: "application/zip");
+
+        var store = new FakeStore();
+        await new QtiPackageUploader().UploadAsync(input, store, new QtiUploaderOptions
+        {
+            StoreOriginalPackage = false,
+            StoreConvertedPackage = false,
+            ConvertQti2ToQti3 = false,
+            CleanAndPrettyPrintQtiXml = true
+        });
+
+        var extracted = store.StoredFiles.Single(f =>
+            f.Kind == QtiStoredFileKind.ExtractedEntry &&
+            f.RelativePath == "items/item.xml");
+        var xml = ReadUtf8Text(extracted.Content);
+        Assert.Contains("<strong>niet</strong> <strong>waar</strong> zijn.", xml);
+        Assert.Contains("<p>Kies <strong>niet</strong> <strong>waar</strong> of een<span> woord </span>hier.</p>", xml);
+    }
+
     private static string ReadEntryText(ZipArchive archive, string path)
     {
         var entry = archive.GetEntry(path);

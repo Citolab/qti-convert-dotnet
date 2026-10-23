@@ -110,7 +110,8 @@ internal static class QtiXmlUtilities
 
                     if (!hasSignificantText)
                     {
-                        element.ReplaceWith(new XElement(element.Name, onlyChild.Nodes()));
+                        // Unwrap the child in place: the whitespace around it separates it from the surrounding words.
+                        onlyChild.ReplaceWith(onlyChild.Nodes());
                         return;
                     }
                 }
@@ -123,7 +124,10 @@ internal static class QtiXmlUtilities
         {
             if (string.IsNullOrWhiteSpace(element.Value) && !element.HasElements)
             {
-                element.Remove();
+                // A span that holds only whitespace still separates the words around it
+                // (`<strong>niet</strong><span> </span><strong>waar</strong>`), so a space takes its place.
+                if (element.Value.Length == 0) element.Remove();
+                else element.ReplaceWith(new XText(" "));
                 return;
             }
 
@@ -142,7 +146,10 @@ internal static class QtiXmlUtilities
 
                     if (string.IsNullOrEmpty(outerText))
                     {
-                        element.ReplaceWith(childSpan.Nodes());
+                        // Unwrap both rather than replacing the span with the child's content: the
+                        // whitespace around the child separates it from the surrounding words.
+                        childSpan.ReplaceWith(childSpan.Nodes());
+                        element.ReplaceWith(element.Nodes());
                     }
                 }
             }
