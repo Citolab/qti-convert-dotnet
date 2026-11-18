@@ -175,4 +175,84 @@ public sealed class WrapStimulusInSectionTests
         Assert.Contains(doc.Descendants(), e => e.Attribute("identifier")?.Value == "SUB");
         Assert.Null(TestPart(result).Attribute("data-navigation-entity"));
     }
+
+    [Fact]
+    public async Task GroupsSingleFlatSection_TheShapeAuthoringToolsExport()
+    {
+        const string input = """
+<qti-assessment-test xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0">
+  <qti-test-part identifier="TP" navigation-mode="nonlinear" submission-mode="simultaneous">
+    <qti-assessment-section identifier="S1" title="Section 1" visible="true">
+      <qti-assessment-item-ref identifier="ITM-1" href="items/1.xml" />
+      <qti-assessment-item-ref identifier="ITM-2" href="items/2.xml" />
+      <qti-assessment-item-ref identifier="ITM-3" href="items/3.xml" />
+      <qti-assessment-item-ref identifier="ITM-4" href="items/4.xml" />
+      <qti-assessment-item-ref identifier="ITM-5" href="items/5.xml" />
+    </qti-assessment-section>
+  </qti-test-part>
+</qti-assessment-test>
+""";
+        var meta = new Dictionary<string, ItemRefNormalizationMeta>
+        {
+            ["ITM-1"] = new(false, "STIM-A", "Vraag 1"),
+            ["ITM-2"] = new(false, "STIM-A", "Vraag 2"),
+            ["ITM-3"] = new(false, "STIM-B", "Vraag 3"),
+            ["ITM-4"] = new(false, "STIM-B", "Vraag 4"),
+            ["ITM-5"] = new(false, null, "Vraag 5"),
+        };
+        var assignments = new List<(string, string)>();
+
+        var result = (await QtiTransform.Create(input)
+            .WrapStimulusInSectionAsync(Resolver(meta), new WrapStimulusInSectionOptions { AssignmentsOut = assignments }))
+            .Xml();
+
+        var sections = Sections(result);
+        Assert.Equal(3, sections.Count);
+        Assert.Equal(new[] { "ITM-1", "ITM-2" }, ItemIds(sections[0]));
+        Assert.Equal(new[] { "ITM-3", "ITM-4" }, ItemIds(sections[1]));
+        Assert.Equal(new[] { "ITM-5" }, ItemIds(sections[2]));
+        Assert.Equal(new[] { "true", "true", null }, sections.Select(s => s.Attribute("keep-together")?.Value).ToArray());
+        Assert.DoesNotContain(sections, s => s.Attribute("identifier")?.Value == "S1");
+        Assert.Equal("section", TestPart(result).Attribute("data-navigation-entity")?.Value);
+        Assert.Equal(
+            new[]
+            {
+                ("ITM-1", "TP-SEC-1"), ("ITM-2", "TP-SEC-1"),
+                ("ITM-3", "TP-SEC-2"), ("ITM-4", "TP-SEC-2"),
+                ("ITM-5", "TP-SEC-3"),
+            },
+            assignments.ToArray());
+    }
+
+    [Fact]
+    public async Task LeavesSingleFlatSectionAlone_WhenItHasSelectionOrOrderingRules()
+    {
+        const string input = """
+<qti-assessment-test xmlns="http://www.imsglobal.org/xsd/imsqtiasi_v3p0">
+  <qti-test-part identifier="TP">
+    <qti-assessment-section identifier="S1" visible="true">
+      <qti-ordering shuffle="true" />
+      <qti-assessment-item-ref identifier="ITM-1" href="items/1.xml" />
+      <qti-assessment-item-ref identifier="ITM-2" href="items/2.xml" />
+    </qti-assessment-section>
+  </qti-test-part>
+</qti-assessment-test>
+""";
+        var meta = new Dictionary<string, ItemRefNormalizationMeta>
+        {
+            ["ITM-1"] = new(false, "STIM-A", "Vraag 1"),
+            ["ITM-2"] = new(false, "STIM-A", "Vraag 2"),
+        };
+        var assignments = new List<(string, string)>();
+
+        var result = (await QtiTransform.Create(input)
+            .WrapStimulusInSectionAsync(Resolver(meta), new WrapStimulusInSectionOptions { AssignmentsOut = assignments }))
+            .Xml();
+
+        var doc = XDocument.Parse(result);
+        Assert.Equal("S1", Assert.Single(Sections(result)).Attribute("identifier")?.Value);
+        Assert.Contains(doc.Descendants(), e => e.Name.LocalName == "qti-ordering" && e.Attribute("shuffle")?.Value == "true");
+        Assert.Null(TestPart(result).Attribute("data-navigation-entity"));
+        Assert.Empty(assignments);
+    }
 }

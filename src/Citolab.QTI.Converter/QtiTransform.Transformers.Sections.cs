@@ -54,8 +54,10 @@ public sealed partial class QtiTransform
     /// consecutive items sharing the same stimulus become one section with
     /// <c>keep-together="true"</c>, info items stay isolated, every other item becomes a
     /// single-item section, and the test part is marked <c>data-navigation-entity="section"</c>.
-    /// Test parts already shaped as a single wrapping section are left untouched. The document is
-    /// only mutated when at least one 2+ shared-stimulus cluster exists. Returns whether it changed.
+    /// Test parts already shaped as a single wrapping section are left untouched; a single flat
+    /// section — the item-refs directly inside it, as most authoring tools export a test — is
+    /// grouped like any other part. The document is only mutated when at least one 2+
+    /// shared-stimulus cluster exists. Returns whether it changed.
     /// </summary>
     private static async Task<bool> WrapStimulusInSection(
         XDocument doc,
@@ -76,17 +78,7 @@ public sealed partial class QtiTransform
             .Where(e => e.Name.LocalName is "qti-test-part" or "testPart")
             .ToList();
 
-        // A part with a single wrapping section (and no direct item-refs) is already section-shaped.
-        var parts = allParts
-            .Where(part =>
-            {
-                var directSections = part.Elements()
-                    .Count(e => e.Name.LocalName is "qti-assessment-section" or "assessmentSection");
-                var directRefs = part.Elements()
-                    .Count(e => e.Name.LocalName is "qti-assessment-item-ref" or "assessmentItemRef");
-                return !(directSections == 1 && directRefs == 0);
-            })
-            .ToList();
+        var parts = allParts.Where(part => !IsSingleWrappingSection(part)).ToList();
 
         // Pre-resolve metadata for every item-ref (async), then rewrite synchronously.
         var metaByEl = new Dictionary<XElement, ResolvedSectionMeta>();
@@ -132,6 +124,26 @@ public sealed partial class QtiTransform
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// A part whose only child is one section is already section-shaped when that section holds
+    /// the structure: nested sections, or selection / ordering rules, which the rewrite would
+    /// drop. A flat section with only item-refs is not: it is the whole test in one section.
+    /// </summary>
+    private static bool IsSingleWrappingSection(XElement part)
+    {
+        var directSections = part.Elements()
+            .Where(e => e.Name.LocalName is "qti-assessment-section" or "assessmentSection")
+            .ToList();
+        var hasDirectRefs = part.Elements()
+            .Any(e => e.Name.LocalName is "qti-assessment-item-ref" or "assessmentItemRef");
+        if (directSections.Count != 1 || hasDirectRefs) return false;
+
+        return directSections[0].Elements().Any(e => e.Name.LocalName
+            is "qti-assessment-section" or "assessmentSection"
+            or "qti-selection" or "selection"
+            or "qti-ordering" or "ordering");
     }
 
     private static List<List<XElement>> BuildSectionClusters(
