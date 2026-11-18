@@ -18,7 +18,10 @@ This repo includes a GitHub Actions workflow at `.github/workflows/nuget.yml` th
 - a tag push like `v0.1.0` (uses the tag as the NuGet version), or
 - a manual run (Actions → workflow → Run workflow) with an optional `version` input.
 
-To enable publishing, add `NUGET_API_KEY` as a repository secret.
+Publishing uses nuget.org [Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing): the workflow exchanges a GitHub OIDC token for an API key that is valid for one hour, so no API key is stored. To enable it:
+
+- on nuget.org, under your username → Trusted Publishing, add a policy for repository owner `Citolab`, repository `qti-convert-dotnet`, workflow file `nuget.yml` (no environment), owned by the account or organization that owns the packages;
+- add `NUGET_USER` as a repository secret: the nuget.org profile name of that owner (not an email address).
 
 ## Basic usage (ASP.NET Controller)
 
